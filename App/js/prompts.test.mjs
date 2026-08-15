@@ -92,18 +92,9 @@ for (const code of TAG_CODES) {
 const hyphenated = [...analyze.matchAll(/`([a-z]+(?:-[a-z]+)+)`/g)].map((m) => m[1]);
 const strayTags = hyphenated.filter((x) => !TAG_CODES.includes(x));
 assert.deepEqual(strayTags, [], `analyze-task.md contains unregistered tag codes: ${strayTags}`);
-// 5. **prompts/ is English only, not a single Chinese character.** The source language is
-//    English and there is exactly one copy of it (a second translated copy is a second source
-//    of truth, and editing one while forgetting the other has no symptom whatsoever). This rule
-//    gets broken quietly — the next session casually adds a Chinese sentence, the agent still
-//    understands it, so nothing goes wrong until a user who does not read Chinese opens the
-//    settings page.
-//    The two characters in the range below are the CJK block boundaries (U+4E00–U+9FFF), i.e.
-//    the detector itself. Turning them into English would leave this test checking nothing.
-for (const name of onDisk) {
-  const cjk = [...new Set(read(`../prompts/${name}`).match(/[一-鿿]+/g) ?? [])];
-  assert.deepEqual(cjk, [], `prompts/${name} contains Chinese: ${cjk}. The source language of prompts/ is English`);
-}
+// 5. The "prompts/ is English only" check lives in source-language.test.mjs, together with the
+//    same rule for the rest of the source. It used to sit here and only looked for Chinese, which
+//    would have let a Japanese or Korean sentence through.
 
 // 6. Writable fields of task.json: `AGENT_FIELDS` and analyze-task.md have to be the same list.
 //    Two ends of one thing again — the prompt decides what the agent will write, the code
