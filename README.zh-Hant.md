@@ -96,7 +96,7 @@ velocity 與機率分佈還沒有真正的使用場合——目前的開發團�
 
 ### 線上版
 
-掛載於 GitHub Pages，開啟網址即可使用。（**待部署，網址之後補上**）
+**<https://bwaynesu.github.io/agentic-ebs/>** —— 掛載於 GitHub Pages，開啟網址即可使用。
 
 程式碼在網路上，資料留在本機——網頁不會上傳任何內容，也沒有可上傳的對象。
 

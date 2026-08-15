@@ -96,7 +96,7 @@ The current boundary of the tool: it computes **the time a single card takes, no
 
 ### Hosted
 
-Served from GitHub Pages; opening the URL is all it takes. (**Not deployed yet — URL to follow**)
+**<https://bwaynesu.github.io/agentic-ebs/>** — served from GitHub Pages, so opening the link is all it takes.
 
 The code lives on the web, the data stays on the machine. The page uploads nothing, and there is nowhere for it to upload to.
 
