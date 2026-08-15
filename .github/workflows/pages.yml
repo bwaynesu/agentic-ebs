@@ -1,0 +1,59 @@
+# Publish App/ to GitHub Pages.
+#
+# The site lives in App/, not at the repository root, so the default
+# "deploy from a branch" setting cannot serve it. This workflow uploads that
+# one directory as the Pages artifact instead. Set Settings > Pages > Source
+# to "GitHub Actions" for it to take effect.
+#
+# The tests run first. They cannot exercise app.js, which needs a DOM, but they
+# do cover every pure function and the CSS and prompt contracts — enough that a
+# broken tree does not reach the published page.
+name: Deploy App to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it: a half-published site
+# is worse than a slightly stale one.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run tests
+        run: node --test "App/js/*.test.mjs"
+
+      - name: Syntax-check app.js
+        run: node --check App/js/app.js
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: App
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
