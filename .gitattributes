@@ -1,0 +1,5 @@
+# Store and check out everything with LF.
+# prompts.test.mjs and style.test.mjs enforce byte budgets; if line endings
+# follow the platform, the same file measures one byte per line larger on
+# Windows than on Linux, and a budget calibrated on one can fail on the other.
+* text=auto eol=lf

@@ -1,0 +1,829 @@
+/* style.css — three themes (light / gray / dark) switched through CSS variables; app.js writes the active one onto <html data-theme> */
+
+:root {
+  /* Scale: spacing and corner radii all come from here, so one edit moves the whole site */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-pill: 999px;
+  --content-max: 1180px;
+
+  --fs-xs: 0.78rem;
+  --fs-sm: 0.86rem;
+  --fs-md: 0.95rem;
+  --fs-lg: 1.05rem;
+  --fs-xl: 1.3rem;
+}
+
+/* light: white cards, the default */
+:root, :root[data-theme="light"] {
+  /* Tells the browser which palette its own controls should use: scrollbar tracks, dropdowns,
+     date pickers, checkboxes. Leave this line out and the scrollbar stays white under the dark
+     theme — that white edge people report as "the background isn't filled in". */
+  color-scheme: light;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #f7f9fb;
+  --surface-hover: #eef3f9;
+  --border: #e2e6ec;
+  --border-strong: #cdd4dd;
+  --text: #1c2128;
+  --text-dim: #5a6472;
+  --text-faint: #8b95a3;
+  --accent: #2f6fd0;
+  --accent-hover: #2559a8;
+  --accent-fg: #ffffff;
+  --accent-soft: #e8f0fc;
+  --ok: #1f9254;
+  --ok-strong: #167544;
+  --ok-strong-hover: #0f5c35;
+  --ok-soft: #e7f6ee;
+  --warn: #a4650a;
+  --warn-soft: #fdf4e3;
+  --warn-border: #e8cd93;
+  --danger: #c0392f;
+  --danger-soft: #fdeeec;
+  --backdrop: rgba(20, 30, 45, 0.35);
+  --shadow: 0 1px 2px rgba(20, 30, 45, 0.06), 0 2px 8px rgba(20, 30, 45, 0.05);
+  --shadow-lg: 0 4px 16px rgba(20, 30, 45, 0.13);
+}
+
+/* gray: warm grey ground, low contrast, easy on the eyes over long sessions */
+:root[data-theme="gray"] {
+  color-scheme: dark;
+  --bg: #2f3237;
+  --surface: #3a3e44;
+  --surface-2: #34383e;
+  --surface-hover: #454a52;
+  --border: #4a4f57;
+  --border-strong: #5c626c;
+  --text: #e6e8ec;
+  --text-dim: #a8aeb8;
+  --text-faint: #838a95;
+  --accent: #6f9fe0;
+  --accent-hover: #85b0ea;
+  --accent-fg: #1b1e22;
+  --accent-soft: #3d4753;
+  --ok: #5cc48a;
+  --ok-strong: #5cc48a;
+  --ok-strong-hover: #74d29d;
+  --ok-soft: #33453c;
+  --warn: #e0b464;
+  --warn-soft: #443b2b;
+  --warn-border: #6b5934;
+  --danger: #e58079;
+  --danger-soft: #452f2e;
+  --backdrop: rgba(0, 0, 0, 0.5);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* dark: deep black ground, high contrast */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #14161a;
+  --surface: #1c1f25;
+  --surface-2: #21252c;
+  --surface-hover: #2a2f37;
+  --border: #2e333b;
+  --border-strong: #414852;
+  --text: #eceef2;
+  --text-dim: #9aa3b0;
+  --text-faint: #6f7885;
+  --accent: #5b9bf5;
+  --accent-hover: #7bb0f8;
+  --accent-fg: #0f1115;
+  --accent-soft: #1e2c42;
+  --ok: #48c98a;
+  --ok-strong: #48c98a;
+  --ok-strong-hover: #63d59d;
+  --ok-soft: #14301f;
+  --warn: #e8b45a;
+  --warn-soft: #362c18;
+  --warn-border: #5c4a22;
+  --danger: #f0776d;
+  --danger-soft: #3a1f1d;
+  --backdrop: rgba(0, 0, 0, 0.6);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+* { box-sizing: border-box; }
+
+/* The background goes on html rather than relying on body's background propagating to the
+   canvas — with body alone, content shorter than the viewport leaves the browser's default
+   white showing below. Setting it again on body is for body's own stacking context. */
+html {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
+}
+
+body {
+  font-family: "Segoe UI", "Microsoft JhengHei", system-ui, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  /* Fade the whole page into the new colors when the theme changes, instead of flashing */
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* ---------- header ---------- */
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+header h1 {
+  font-size: var(--fs-lg);
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+#dir-status {
+  flex: 1;
+  color: var(--text-faint);
+  font-size: var(--fs-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- buttons ---------- */
+
+button {
+  padding: 0.42rem 0.85rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  transition: background-color 0.12s, border-color 0.12s, transform 0.08s;
+}
+
+button:hover { background: var(--surface-hover); border-color: var(--border-strong); }
+button:active { transform: translateY(1px); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+button.primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: transparent;
+  font-weight: 600;
+}
+button.primary:hover { background: var(--accent-hover); }
+
+/* "Complete" and "Start / Restart" occupy the same spot in the side rail at the same size, with
+   only the label differing — pressing the wrong one stops a clock that is still running. Green is
+   the site-wide color for "this now holds" (the selected approach uses it too), and stopping the
+   clock belongs to that family.
+   It uses --ok-strong rather than --ok: against white text in the light theme, --ok only reaches
+   4.1:1 and fails AA. */
+button.primary.complete { background: var(--ok-strong); }
+button.primary.complete:hover { background: var(--ok-strong-hover); }
+
+/* The three-way choice for unsaved content. A native <dialog> hands focus trapping, Esc and
+   ::backdrop to the browser, so there is no need to build a modal. Its default styling (black
+   border, centring margin: auto) has to be overridden to stop it looking out of place. */
+dialog.ask {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  padding: var(--sp-4);
+  max-width: 24rem;
+  box-shadow: var(--shadow-lg);
+}
+dialog.ask::backdrop { background: var(--backdrop); }
+dialog.ask p { margin: 0; }
+
+.danger { color: var(--danger); border-color: var(--border-strong); }
+.danger:hover { background: var(--danger-soft); border-color: var(--danger); }
+
+.link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.link-btn:hover { background: none; text-decoration: underline; }
+
+/* ---------- layout ---------- */
+
+main {
+  max-width: var(--content-max);
+  margin: var(--sp-5) auto;
+  padding: 0 var(--sp-5);
+}
+
+h2 { font-size: var(--fs-xl); margin: 0 0 var(--sp-2); }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: var(--sp-3) 0; align-items: center; }
+.spacer { flex: 1; }
+
+.muted { color: var(--text-faint); }
+.small { font-size: var(--fs-sm); }
+.strong { font-weight: 600; }
+.pre-wrap { white-space: pre-wrap; word-break: break-word; }
+.sub-title { font-weight: 600; font-size: var(--fs-sm); color: var(--text-dim); }
+
+/* The detail page title row and inline editing (title and requirement share .inline-edit / .icon-btn) */
+.detail-title { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.detail-title h2 { margin-bottom: 0; }
+
+/* The new-card bar at the top of the list: the input takes all the width the buttons leave */
+.new-task-title { flex: 1; min-width: 0; padding: var(--sp-2); }
+
+.inline-edit { display: flex; flex-direction: column; gap: var(--sp-2); }
+/* The title row is a flex container, so without this the edit box shrinks to the width of its content (a few characters wide) */
+.detail-title > .inline-edit { flex: 1; }
+.inline-edit > input { font-size: var(--fs-md); padding: var(--sp-2); width: 100%; }
+.inline-edit .toolbar { margin: 0; }
+
+.icon-btn {
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+  color: var(--text-faint);
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+.icon-btn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ---------- task list ---------- */
+
+.card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-3) var(--sp-4);
+  padding-left: calc(var(--sp-4) + 4px);
+  margin-bottom: var(--sp-2);
+  box-shadow: var(--shadow);
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+}
+
+/* Status color stripe down the left edge: spot which card is running without reading a word */
+.card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: var(--radius) 0 0 var(--radius);
+  background: var(--status-color, var(--border-strong));
+}
+
+.card.clickable { cursor: pointer; }
+.card.clickable:hover { border-color: var(--accent); box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+/* The card you were just looking at, on the way back from the detail page. It uses --accent (the
+   site's color for "you are here", same as .rail-nav .current) rather than the status color or
+   --ok, both of which already mean something else.
+   The ring must use --accent itself, **never --accent-soft**: soft is a fill color, not a line
+   color, and its dark-theme value sits close to the page background on purpose, so a ring drawn
+   with it is barely visible (this has happened).
+   The ring also has to be thick enough to read differently from hover — hover is a 1px blue
+   border, this is a 1px border plus a 3px ring. The difference is quantity, not color, so it
+   still reads without adding a label. The real primary signal is that the card gets scrolled to
+   the middle of the screen anyway.
+   It survives exactly one render: anything that repaints the list clears it, so no fade-out
+   animation or timer is needed. */
+.card.just-viewed { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent); }
+
+.card-main { flex: 1; min-width: 0; }
+.card-title { font-weight: 600; font-size: var(--fs-md); }
+.card-meta { color: var(--text-dim); font-size: var(--fs-sm); margin-top: 0.1rem; display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+
+.tag {
+  font-size: var(--fs-xs);
+  padding: 0.05rem 0.45rem;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+/* The status color is set on the element by app.js (--status-color) and shared by the badge and the stripe */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: 0.1rem 0.55rem;
+  border-radius: var(--radius-pill);
+  color: var(--status-color);
+  background: var(--surface-2);
+}
+.status-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+/* The dot breathes while a card is active, so a running timer is obvious at a glance */
+.status-badge.live::before { animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.25; } }
+
+/* The live timer on an active card: tabular figures, so the seconds do not jitter sideways */
+.live-timer { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 600; }
+
+/* ---------- sections ---------- */
+
+.block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-3);
+  box-shadow: var(--shadow);
+}
+
+.block summary.section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-md);
+  font-weight: 600;
+  cursor: pointer;
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--sp-3);
+  user-select: none;
+  list-style: none;
+}
+.block summary.section-title::-webkit-details-marker { display: none; }
+.block summary.section-title::before {
+  content: "›";
+  display: inline-block;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--text-faint);
+  transition: transform 0.18s;
+  transform: rotate(90deg);
+}
+.block:not([open]) summary.section-title::before { transform: rotate(0deg); }
+.block:not([open]) summary.section-title { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.block summary.section-title:hover::before { color: var(--accent); }
+
+.divided { border-top: 1px solid var(--border); margin-top: var(--sp-3); padding-top: var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-1); }
+
+/* The done section: the card count beside the heading, and the summary statistics once expanded */
+.count-badge {
+  margin-left: var(--sp-2);
+  padding: 0.05rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+}
+.done-stats {
+  margin-bottom: var(--sp-3);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+.done-stats b { font-size: var(--fs-lg); color: var(--accent); }
+
+/* Finished cards that did not make it into the velocity statistics: the reason plus how to fix it,
+   because until it is fixed the card never counts.
+   There is deliberately no left edge stripe: the card already carries a status stripe on its far
+   left, and a second one turns into two parallel lines on the same card competing with each other,
+   while "this is a warning" has already been said by the yellow background and yellow text. A
+   stripe would be a constant third repetition.
+   (The left edge line on a toast is the opposite case: it turns red for .err and is the only thing
+   distinguishing success from failure, so it cannot be removed.) */
+.excluded {
+  margin-top: var(--sp-1);
+  padding: 0.15rem 0.5rem;
+  background: var(--warn-soft);
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  color: var(--text-dim);
+}
+.excluded b { color: var(--warn); }
+
+/* ---------- forms ---------- */
+
+input, textarea, select {
+  font-family: inherit;
+  font-size: var(--fs-sm);
+  padding: 0.42rem 0.55rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+input:focus, textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+select:disabled, input:disabled { background: var(--surface-2); color: var(--text-faint); }
+textarea { resize: vertical; line-height: 1.6; width: 100%; }
+
+.form { display: flex; flex-direction: column; gap: var(--sp-3); }
+.form > input, .form > textarea { font-size: var(--fs-md); padding: var(--sp-2); }
+
+/* Settings categories: separated by a top border plus a heading */
+.settings-group { display: flex; flex-direction: column; gap: var(--sp-3); border-top: 1px solid var(--border); padding-top: var(--sp-4); margin-top: var(--sp-3); }
+.settings-group:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+.settings-group > h3 { margin: 0; font-size: var(--fs-lg); color: var(--text); }
+.field { display: flex; flex-direction: column; gap: var(--sp-1); font-size: var(--fs-sm); color: var(--text-dim); }
+.field > span:first-child { font-weight: 600; color: var(--text); }
+.field select, .field input { align-self: flex-start; min-width: 12rem; }
+
+.weekday-row { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+.weekday { display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; color: var(--text); }
+.radio-row { display: flex; align-items: center; gap: var(--sp-2); cursor: pointer; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); width: auto; min-width: 0; cursor: pointer; }
+
+.reminder-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-1) 0;
+}
+.reminder-row select, .reminder-row input { width: auto; min-width: 0; padding: 0.25rem 0.4rem; }
+.reminder-row input[type="datetime-local"] { min-width: 12.5rem; }
+.reminder-row input[type="month"], .reminder-row input[type="date"] { min-width: 9rem; }
+
+/* ---------- reminder panels ---------- */
+
+.reminder { border-color: var(--warn-border); background: var(--warn-soft); }
+.reminder summary.section-title { color: var(--warn); border-bottom-color: var(--warn-border); }
+
+/* The "a new prompt version exists" notice, deliberately quieter than .reminder. Ignoring the two
+   above leaves cards silently out of the velocity pool; this one only says "a new version is
+   available", and using the same warning color would train the user to skip past the other two. */
+.notice { border-color: var(--accent); background: var(--accent-soft); }
+.notice summary.section-title { color: var(--accent); border-bottom-color: var(--accent); }
+.notice-files { margin: var(--sp-2) 0; padding-left: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-1); }
+.notice-log { margin: var(--sp-2) 0; display: flex; flex-direction: column; gap: var(--sp-1); }
+/* The side-by-side bundled version on the settings page: read-only, told apart from the editable copy by its background */
+.compare { margin-top: var(--sp-2); }
+.compare textarea { background: var(--surface-2); color: var(--text-dim); }
+.count-badge.update { color: var(--accent); border-color: var(--accent); }
+
+/* The small dot on the settings button: once the banner is dismissed this is the only cue left, so
+   it tracks nothing but "are there unhandled files".
+   The outline uses the base color rather than --accent-soft — soft is a fill color, and drawing a
+   line with it in the dark theme draws nothing. */
+#settings-btn.has-update { position: relative; }
+#settings-btn.has-update::after {
+  content: "";
+  position: absolute;
+  top: 0.15rem;
+  right: 0.15rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.warn {
+  color: var(--warn);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-2);
+  font-size: var(--fs-sm);
+}
+/* ---------- approaches and distribution ---------- */
+
+.approach {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  background: var(--surface-2);
+  transition: border-color 0.12s, background-color 0.12s;
+}
+.approach:hover { border-color: var(--border-strong); }
+.approach.picked { border-color: var(--ok); background: var(--ok-soft); }
+.approach-title { font-weight: 600; }
+.approach-hours { color: var(--text-dim); font-weight: 400; font-size: var(--fs-sm); }
+
+/* Approach analysis: one block per approach, collapsed by default. The selected one reuses the
+   --ok green from .approach.picked — the two places say the same thing and must not have two
+   different color languages. The tint covers only the summary: once expanded the content is a full
+   markdown document, and a pale green ground fights with the code block backgrounds. The left edge
+   stripe runs the whole height, so peripheral vision is enough and nothing has to be read. */
+.approach-block {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--sp-2);
+}
+.approach-block > summary {
+  padding: var(--sp-2) var(--sp-3);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  border-radius: var(--radius-sm);
+}
+.approach-block > summary:hover { background: var(--surface-2); }
+.approach-block[open] > summary { border-bottom: 1px solid var(--border); border-radius: 0; }
+.approach-block > .md { padding: 0 var(--sp-3) var(--sp-3); }
+.approach-block.picked { border-left-color: var(--ok); }
+.approach-block.picked > summary { background: var(--ok-soft); }
+.picked-tag { margin-left: var(--sp-2); color: var(--ok); font-size: var(--fs-sm); }
+
+/* The distribution chart: the axis runs 0 to maxH (shared, drawn once at the bottom of the list),
+   the solid band is P5–P95 and the vertical line is P50.
+   The numbers are labelled directly on the chart — P50 above the bar, the two ends below it. That
+   layering is what keeps them from colliding. */
+.dist { position: relative; margin: var(--sp-1) 0; }
+.dist-row { position: relative; height: 1.2rem; font-size: var(--fs-xs); }
+.dist-row span { position: absolute; white-space: nowrap; top: 0; }
+
+.lbl-p50 { transform: translateX(-50%); color: var(--text); font-weight: 600; }
+/* The numbers at each end of the range sit on the outside, so however narrow the range gets they never collide; against the axis edge they flip back inside to avoid being clipped */
+.lbl-edge { transform: translateX(-100%); padding-right: 5px; color: var(--text-dim); }
+.lbl-edge.end { transform: none; padding: 0 0 0 5px; }
+.lbl-edge.inside { transform: none; padding: 0 0 0 5px; }
+.lbl-edge.end.inside { transform: translateX(-100%); padding: 0 5px 0 0; }
+
+.dist-axis {
+  position: relative;
+  height: 1.2rem;
+  margin-top: var(--sp-1);
+  padding-top: var(--sp-1);
+  border-top: 1px solid var(--border);
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.axis-mark { position: absolute; top: var(--sp-1); transform: translateX(-50%); white-space: nowrap; }
+.axis-mark.start { transform: none; }
+.axis-mark.end { transform: translateX(-100%); }
+
+/* On-demand explanations beside a heading: they appear on hover or keyboard focus and take up no
+   space the rest of the time.
+   This is an overlay (it has a z-index and sits above the content instead of pushing the layout
+   around), which is why it may use top: 100% to hang below the icon — what is forbidden is a text
+   label doing that without a z-index, since it would cover the element below. */
+.hint { position: relative; display: inline-flex; margin-left: var(--sp-1); font-weight: 400; }
+
+.hint-icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  padding: 0;
+  border-radius: 50%;
+  font-size: var(--fs-xs);
+  line-height: 1;
+  color: var(--text-faint);
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+.hint-icon:hover { color: var(--accent); border-color: var(--accent); }
+
+.hint-bubble {
+  position: absolute;
+  top: 100%;
+  left: -0.5rem;
+  margin-top: var(--sp-1);
+  z-index: 30;
+  width: min(30rem, 80vw);
+  display: none;
+  padding: var(--sp-3);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--text-dim);
+  cursor: default;
+}
+.hint:hover .hint-bubble, .hint:focus-within .hint-bubble { display: block; }
+.hint-title { font-weight: 600; color: var(--text); margin-bottom: var(--sp-2); }
+.hint-row { display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+.hint-row i { flex-shrink: 0; margin-top: 0.35rem; }
+.hint-row b { color: var(--text); margin-right: 0.35rem; }
+.hint-note { margin-top: var(--sp-2); padding-top: var(--sp-2); border-top: 1px solid var(--border); font-size: var(--fs-xs); }
+.hint-subtitle { font-weight: 600; color: var(--text); margin-bottom: var(--sp-1); }
+.hint-note ul { margin: 0; padding-left: 1.1rem; }
+.hint-note li { margin-bottom: 0.25rem; }
+.hint-note li:last-child { margin-bottom: 0; }
+
+/* Legend: the marks themselves explain what each of the three lines is */
+.dist-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-4);
+  margin-top: var(--sp-1);
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+}
+.dist-legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+.dist-legend i { display: inline-block; }
+.key-ideal { width: 0; height: 12px; border-left: 2px dashed var(--text-dim); }
+.key-band { width: 18px; height: 8px; border-radius: 2px; background: var(--accent); opacity: 0.9; }
+.key-p50 { width: 2px; height: 12px; background: var(--text); }
+
+.range-bar {
+  position: relative;
+  height: 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin: var(--sp-2) 0 var(--sp-1);
+  overflow: hidden;
+}
+.range-band {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  background: var(--accent);
+  border-radius: 3px;
+  opacity: 0.9;
+}
+.range-p50 {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--text);
+}
+/* The ideal hours the agent estimated, as a dashed line. Its distance from the solid line (the most likely outcome) is exactly how much velocity corrected the estimate */
+.range-ideal {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  margin-left: -1px;
+  border-left: 2px dashed var(--text-dim);
+}
+/* Tick lines: they give "how much longer is this one than that one" a reference without stealing attention */
+.range-tick { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--border); }
+
+.velocity { font-weight: 600; margin-top: var(--sp-2); color: var(--accent); }
+
+/* ---------- the two columns of the detail page ---------- */
+
+.layout { display: flex; gap: var(--sp-4); align-items: flex-start; }
+.side-rail {
+  position: sticky;
+  top: calc(3.4rem + var(--sp-3));
+  width: 210px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.side-rail.collapsed { width: auto; padding: var(--sp-1); }
+.side-rail button.primary { width: 100%; padding: 0.55rem; font-size: var(--fs-md); }
+.content-col { flex: 1; min-width: 0; }
+
+.rail-stats {
+  border-top: 1px solid var(--border);
+  padding-top: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.rail-nav { border-top: 1px solid var(--border); padding-top: var(--sp-2); display: flex; flex-direction: column; gap: 0.1rem; font-size: var(--fs-sm); }
+.rail-nav .link-btn { padding: 0.2rem 0.3rem; border-radius: var(--radius-sm); color: var(--text-dim); }
+.rail-nav .link-btn:hover { background: var(--surface-hover); text-decoration: none; color: var(--text); }
+.rail-nav .link-btn.current { color: var(--accent); font-weight: 600; background: var(--accent-soft); }
+
+/* ---------- markdown produced by the agent ---------- */
+
+.md { line-height: 1.7; }
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md h1, .md h2, .md h3 { font-size: var(--fs-lg); margin: var(--sp-4) 0 var(--sp-2); }
+.md h3 { font-size: var(--fs-md); }
+.md pre, .md code { background: var(--surface-2); border-radius: 4px; border: 1px solid var(--border); }
+.md code { padding: 0.05rem 0.3rem; font-size: 0.9em; }
+.md pre { padding: var(--sp-3); overflow-x: auto; }
+.md pre code { border: none; padding: 0; background: none; }
+.md img { max-width: 100%; }
+.md table { border-collapse: collapse; display: block; overflow-x: auto; }
+.md th, .md td { border: 1px solid var(--border); padding: 0.3rem 0.6rem; text-align: left; }
+.md blockquote { margin: var(--sp-3) 0; padding-left: var(--sp-3); border-left: 3px solid var(--border-strong); color: var(--text-dim); }
+
+/* ---------- floating buttons ---------- */
+
+#to-top, #collapse-all, #refresh-btn {
+  position: fixed;
+  right: var(--sp-5);
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 0;
+  box-shadow: var(--shadow-lg);
+  background: var(--accent);
+  color: var(--accent-fg);
+  border: none;
+  z-index: 15;
+}
+#to-top:hover, #collapse-all:hover, #refresh-btn:hover { background: var(--accent-hover); }
+#collapse-all { bottom: var(--sp-5); }
+#refresh-btn { bottom: 4.6rem; }
+#to-top { bottom: 7.8rem; }
+#to-top[hidden] { display: none; }
+#refresh-btn.spinning { animation: spin 0.6s ease; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- toast: the replacement for a blocking alert() ---------- */
+
+#toasts {
+  position: fixed;
+  bottom: var(--sp-5);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  pointer-events: none;
+}
+.toast {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-2) var(--sp-4);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--fs-sm);
+  max-width: 90vw;
+  animation: toast-in 0.2s ease;
+}
+.toast.err { border-left-color: var(--danger); }
+.toast.leaving { animation: toast-out 0.2s ease forwards; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
+@keyframes toast-out { to { opacity: 0; transform: translateY(8px); } }
+
+/* ---------- empty states ---------- */
+
+.empty {
+  text-align: center;
+  padding: var(--sp-5) var(--sp-4);
+  color: var(--text-faint);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+}
+
+/* ---------- transitions ---------- */
+
+/* View Transitions: the browser handles the cross-fade between list and detail natively */
+::view-transition-old(main-view) { animation: fade-out 0.16s ease forwards; }
+::view-transition-new(main-view) { animation: fade-in 0.2s ease; }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes fade-in { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+@media (max-width: 900px) {
+  main { padding: 0 var(--sp-3); }
+  .layout { flex-direction: column; }
+  .side-rail { position: static; width: auto; }
+  .rail-nav { flex-direction: row; flex-wrap: wrap; }
+}
