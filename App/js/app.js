@@ -2095,17 +2095,25 @@ async function tryConnect(handle) {
   }
 }
 
-// Used by "change folder" on the settings page.
+// Used by "change folder" on the settings page. Everything past the picker belongs to connect():
+// ensureInit creates what a brand-new folder is missing, and connect's own "no dataDirPath yet"
+// branch seeds the relative path.
+// Do NOT read settings.json here to reset dataDirPath. A brand-new folder has no settings.json,
+// readJSON answers null for a missing file, and assigning to it throws — while pickDataDir has
+// already committed the new handle to IndexedDB, leaving the store pointed at a folder we never
+// connected to. It was also wrong on its own terms: switching to a folder that already holds data
+// would overwrite the relative path its owner had corrected by hand.
+// tryConnect rather than connect, so a folder that cannot be read leaves a coherent
+// "not connected" screen instead of a half-switched one.
 async function changeFolder() {
+  let handle;
   try {
-    const handle = await store.pickDataDir();
-    const fresh = await store.readJSON("settings.json");
-    fresh.dataDirPath = handle.name; // new folder, so the relative path defaults back to its name
-    await store.writeJSON("settings.json", fresh);
-    await connect(handle);
+    handle = await store.pickDataDir();
   } catch (e) {
     if (e.name !== "AbortError") toast(tr("err.connectFailed", { message: e.message }), "err");
+    return;
   }
+  await tryConnect(handle);
 }
 
 const toTop = document.getElementById("to-top");
