@@ -1,9 +1,9 @@
-# 作業系統雜物
+# OS clutter
 .DS_Store
 Thumbs.db
 
-# 知識圖譜快取（開發用工具產生）
+# Knowledge-graph cache produced by a local dev tool
 graphify-out/
 
-# 若把資料夾建在專案內，取名 data/ 就不會進版控
+# Naming a data folder inside the project "data" keeps it out of version control
 data/

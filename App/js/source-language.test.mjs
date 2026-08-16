@@ -78,4 +78,10 @@ check("index.html", read("../index.html"));
 // while forgetting the other has no symptom at all.
 for (const name of list("../prompts/", ".md")) check(`prompts/${name}`, read(`../prompts/${name}`));
 
+// Config files count too. Nobody thinks of a .gitignore comment as source, which is exactly why one
+// got written in Chinese and sat there until a person happened to look.
+for (const path of ["../../.gitignore", "../../.gitattributes", "../../.github/workflows/pages.yml"]) {
+  check(path.replace(/^(\.\.\/)+/, ""), read(path));
+}
+
 console.log("ALL PASS");
