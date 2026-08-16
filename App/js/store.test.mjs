@@ -6,7 +6,7 @@
 // overwrote the whole set as soon as the version fell behind, silently wiping customised
 // prompts). So it gets tested on its own.
 import assert from "node:assert/strict";
-import { promptDecision, parseChangelog, changelogFor, parseJSON } from "./store.js";
+import { promptDecision, parseChangelog, changelogFor, parseJSON, folderVerdict } from "./store.js";
 
 const OURS = (hash, version) => ({ hash, version });
 const OBSERVED = (hash, version) => ({ hash, version, observed: true });
@@ -123,5 +123,16 @@ assert.equal(parseJSON(""), null, "empty file");
 assert.equal(parseJSON("   \n"), null, "whitespace only");
 assert.equal(parseJSON("{broken"), undefined, "broken JSON must stay distinguishable from a missing file so it can be logged");
 assert.equal(parseJSON("﻿"), null, "a lone BOM is an empty file, not a broken one");
+
+// 13. What kind of folder was picked. Answering the picker with the development project itself is
+//     the expensive first-run mistake: ensureInit then writes settings.json, calendar.json,
+//     prompts/ and tasks/ into the project root, usually under version control.
+assert.equal(folderVerdict([]), "empty");
+assert.equal(folderVerdict(["settings.json", "calendar.json", "prompts", "tasks"]), "ours");
+assert.equal(folderVerdict(["tasks"]), "ours", "a folder mid-init still belongs to us");
+assert.equal(folderVerdict([".git", "package.json", "src", "node_modules"]), "foreign");
+assert.equal(folderVerdict([".git", "Assets", "ProjectSettings"]), "foreign", "no marker list: any non-empty folder without our files is foreign");
+// A data folder living inside a project keeps its own markers, so it is still ours
+assert.equal(folderVerdict(["settings.json", ".git"]), "ours");
 
 console.log("ALL PASS");

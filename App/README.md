@@ -20,9 +20,9 @@ Then open <http://localhost:8765>. Any static server does the job when Python is
 
 ## First-time setup
 
-1. Click **Pick folder** at the top right and point it at an empty folder for the data. The tool creates `settings.json`, `calendar.json`, `prompts/` and `tasks/` inside it.
-2. Open the settings page and fill in **Data folder relative path** and **Git author**. Both affect the quality of the agent's analysis; how to fill them is described under [Settings page](#settings-page).
-3. Later reloads remember the folder on their own. When the browser asks for permission again, one click on **Pick / relink folder** restores it — authorisation needs a user gesture and cannot happen automatically.
+1. Click **Pick task data folder** at the top right and point it at a new, empty folder inside your project. The tool creates `settings.json`, `calendar.json`, `prompts/` and `tasks/` inside it.
+2. Open the settings page and fill in **Relative path from your project root** and **Git author**. Both affect the quality of the agent's analysis; how to fill them is described under [Settings page](#settings-page).
+3. Later reloads remember the folder on their own. When the browser asks for permission again, one click on **Relink task data folder** restores it — authorisation needs a user gesture and cannot happen automatically.
 
 The folder can live inside or outside the development project, since the path used in prompts is relative to the project. Inside is the easier choice: most CLI agents refuse by default to touch anything outside their working directory. The price is remembering to add the folder to that project's `.gitignore`.
 
@@ -60,8 +60,8 @@ The step cards are built for this — each one can be picked up on its own, and 
 
 | Field | Meaning |
 |---|---|
-| Data folder | The name of the linked folder, changeable at any time. Switching folders means switching to a different history; the velocity pool does not follow |
-| Data folder relative path | Where that same folder sits from the **development project**'s point of view |
+| Task data folder | The name of the linked folder, changeable at any time. Switching folders means switching to a different history; the velocity pool does not follow |
+| Relative path from your project root | Where that same folder sits from the **development project**'s point of view |
 
 Both rows describe the **same folder**, but they answer different questions:
 - the first is "which folder does the browser read and write"
@@ -71,7 +71,7 @@ One cannot be derived from the other, because the browser, for security reasons,
 
 The folder name is filled in on first link, which is already correct when the folder sits directly in the project root. Every other arrangement needs a correction:
 
-| Project directory the agent runs in | Where the folder actually is | Relative path to enter |
+| Project directory the agent runs in | Where the folder actually is | Path to enter |
 |---|---|---|
 | `~/code/MyGame` | `~/code/MyGame/ebs-data` | `ebs-data` (the default is already right) |
 | `~/code/MyGame` | `~/code/MyGame/docs/ebs-data` | `docs/ebs-data` |

@@ -38,10 +38,41 @@ async function idbSet(key, value) {
   });
 }
 
+// Open the picker WITHOUT remembering the result. The caller gets to look inside first and may
+// still decline; committing here would leave IndexedDB pointing at a folder the user rejected,
+// and on the "change folder" path it would also throw away the one that was working.
 export async function pickDataDir() {
-  dirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
-  await idbSet(KEY, dirHandle);
-  return dirHandle;
+  return window.showDirectoryPicker({ mode: "readwrite" });
+}
+
+// Adopt a picked folder. Everything after this reads and writes here.
+export async function useDataDir(handle) {
+  dirHandle = handle;
+  await idbSet(KEY, handle);
+}
+
+// Top-level entry names, enough of them to judge what kind of folder this is. The cap keeps a
+// project directory with thousands of entries from being walked in full; a real data folder holds
+// four or five things, so its markers are never past it.
+export async function topLevelNames(handle, limit = 30) {
+  const names = [];
+  for await (const name of handle.keys()) {
+    names.push(name);
+    if (names.length >= limit) break;
+  }
+  return names;
+}
+
+// What kind of folder was picked. The failure this guards against is expensive and silent: point
+// the picker at the development project itself and ensureInit writes settings.json, calendar.json,
+// prompts/ and tasks/ into its root, most likely under version control.
+// Deliberately no marker list for project directories (.git, package.json, src, Assets, …): a
+// project directory is never empty, so "holds something, and none of it is ours" already catches
+// it — with no list to keep current for the next language or build tool.
+export function folderVerdict(names) {
+  if (!names.length) return "empty";
+  if (names.includes("settings.json") || names.includes("tasks")) return "ours";
+  return "foreign";
 }
 
 // Forget the remembered folder. THIS IS THE ONLY WAY OUT. Once the folder has been deleted,

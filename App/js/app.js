@@ -871,9 +871,16 @@ async function renderSettings() {
           tr("field.dataDir"),
           el(
             "div",
-            { class: "toolbar" },
-            textEl("span", tr("settings.current", { name: folderName }), { class: "muted" }),
-            textEl("button", tr("settings.changeFolder"), { onclick: changeFolder })
+            {},
+            el(
+              "div",
+              { class: "toolbar" },
+              textEl("span", tr("settings.current", { name: folderName }), { class: "muted" }),
+              textEl("button", tr("settings.changeFolder"), { onclick: changeFolder })
+            ),
+            // Same sentence as the welcome screen, from the same key: this is the other place a
+            // picker opens, and it is just as easy to answer with the project folder itself.
+            textEl("p", tr("folder.note"), { class: "muted small" })
           )
         ),
         field(tr("field.dataDirPath"), pathInput)
@@ -2062,7 +2069,7 @@ function buildWelcome(supported) {
         "div",
         { class: "welcome-cta" },
         textEl("button", tr("app.pickDir"), { class: "primary", type: "button", onclick: () => pickBtn.click() }),
-        textEl("p", tr("welcome.folderNote"), { class: "muted small" })
+        textEl("p", tr("folder.note"), { class: "muted small" })
       )
     );
   }
@@ -2094,7 +2101,7 @@ async function connect(handle) {
   connected = true;
   statusEl.textContent = tr("app.dirConnected", { name: handle.name });
   pickBtn.hidden = true; // changing folders moved to the settings page
-  settingsBtn.disabled = false;
+  setConnectedChrome(true);
   // Make the list the base of the history. Without this line the entry we arrived on has a null
   // state, renderList judges it "different" and pushes a new one — so pressing back on the list
   // returns to that null entry, redraws the list again, and looks like nothing happened.
@@ -2143,31 +2150,45 @@ async function tryConnect(handle) {
     }
     pickBtn.hidden = false;
     pickBtn.disabled = false;
-    settingsBtn.disabled = true;
+    setConnectedChrome(false);
     main.append(buildWelcome(true)); // the page would otherwise go blank with only the header line to explain it
     return false;
   }
+}
+
+// The only way to the picker, shared by the header button and "change folder" in settings.
+// Returns null when the user backs out, and adopts the folder only once it has passed the check —
+// so declining leaves the previous folder exactly as it was, with nothing to restore.
+// Do NOT reopen the picker after a decline: several awaits have gone by, the transient user
+// activation is most likely spent, and showDirectoryPicker would be blocked. Let them press again.
+async function pickFolder() {
+  const handle = await store.pickDataDir();
+  if (store.folderVerdict(await store.topLevelNames(handle)) === "foreign") {
+    if (!confirm(tr("pick.confirmForeign", { name: handle.name }))) return null;
+  }
+  await store.useDataDir(handle);
+  return handle;
 }
 
 // Used by "change folder" on the settings page. Everything past the picker belongs to connect():
 // ensureInit creates what a brand-new folder is missing, and connect's own "no dataDirPath yet"
 // branch seeds the relative path.
 // Do NOT read settings.json here to reset dataDirPath. A brand-new folder has no settings.json,
-// readJSON answers null for a missing file, and assigning to it throws — while pickDataDir has
-// already committed the new handle to IndexedDB, leaving the store pointed at a folder we never
-// connected to. It was also wrong on its own terms: switching to a folder that already holds data
-// would overwrite the relative path its owner had corrected by hand.
+// readJSON answers null for a missing file, and assigning to it throws — which used to strand the
+// store on a folder it had already adopted but never connected to. It was also wrong on its own
+// terms: switching to a folder that already holds data would overwrite the relative path its
+// owner had corrected by hand.
 // tryConnect rather than connect, so a folder that cannot be read leaves a coherent
 // "not connected" screen instead of a half-switched one.
 async function changeFolder() {
   let handle;
   try {
-    handle = await store.pickDataDir();
+    handle = await pickFolder();
   } catch (e) {
     if (e.name !== "AbortError") toast(tr("err.connectFailed", { message: e.message }), "err");
     return;
   }
-  await tryConnect(handle);
+  if (handle) await tryConnect(handle);
 }
 
 const toTop = document.getElementById("to-top");
@@ -2176,7 +2197,8 @@ window.addEventListener("scroll", () => {
   toTop.hidden = window.scrollY < 300;
 });
 
-document.getElementById("collapse-all").addEventListener("click", () => {
+const collapseBtn = document.getElementById("collapse-all");
+collapseBtn.addEventListener("click", () => {
   document.querySelectorAll("main details[open]").forEach((d) => d.removeAttribute("open"));
 });
 
@@ -2214,13 +2236,20 @@ langSelect.addEventListener("change", () => {
   location.reload();
 });
 
-// Disabled until a folder is connected. Leaving it clickable but inert is the worst of the three
-// options: it is the first thing a confused visitor presses, and nothing happens.
 const settingsBtn = document.getElementById("settings-btn");
-settingsBtn.disabled = true;
 settingsBtn.addEventListener("click", () => {
   if (connected) renderSettings();
 });
+
+// Controls that can do nothing until a folder is connected. Leaving them clickable but inert is
+// the worst option available: they are the first things a confused visitor presses, and pressing
+// them produces no reaction at all — not even an error.
+function setConnectedChrome(on) {
+  settingsBtn.disabled = !on;
+  refreshBtn.hidden = !on;
+  collapseBtn.hidden = !on;
+}
+setConnectedChrome(false);
 
 pickBtn.addEventListener("click", async () => {
   try {
@@ -2234,7 +2263,8 @@ pickBtn.addEventListener("click", async () => {
       await tryConnect(remembered);
       return;
     }
-    await tryConnect(await store.pickDataDir());
+    const handle = await pickFolder();
+    if (handle) await tryConnect(handle);
   } catch (e) {
     if (e.name !== "AbortError") {
       statusEl.textContent = tr("err.connectFailed", { message: e.message });
