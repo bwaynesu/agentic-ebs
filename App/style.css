@@ -492,7 +492,13 @@ textarea { resize: vertical; line-height: 1.6; width: 100%; }
   border-top: 1px solid var(--border);
 }
 
-.settings-foot { padding: var(--sp-3) 0; }
+.settings-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-3) 0;
+}
 
 .weekday-row { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
 .weekday { display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; color: var(--text); }

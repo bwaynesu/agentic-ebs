@@ -315,6 +315,21 @@ export async function loadChangelog() {
   }
 }
 
+// The App's own version, kept apart from BUNDLED_PROMPT_VERSION — that one tracks the prompts and
+// stands still through any number of UI releases. `date` is empty in the repository and stamped by
+// the Pages workflow at deploy time, so it can never disagree with what is actually served.
+// no-cache for the same reason as the bundled prompts: a stale version number is worse than none,
+// since it is the one thing a bug report is built on. Failing to read it shows nothing at all
+// rather than "unknown".
+export async function loadVersion() {
+  try {
+    const res = await fetch("version.json", { cache: "no-cache" });
+    return res.ok ? parseJSON(await res.text()) ?? null : null;
+  } catch {
+    return null;
+  }
+}
+
 export const bundledPromptVersion = () => BUNDLED_PROMPT_VERSION;
 
 // The settings page shows the bundled version side by side, which is the only way the user can

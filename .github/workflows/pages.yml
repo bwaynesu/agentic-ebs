@@ -42,6 +42,14 @@ jobs:
       - name: Syntax-check app.js
         run: node --check App/js/app.js
 
+      # version.json ships with an empty date and gets it here. Writing the date by hand would
+      # mean remembering to change it on every release, and a date that disagrees with what is
+      # actually served is worse than no date at all.
+      # Node rather than jq: the job already installs Node above, so this step can be run and
+      # checked locally instead of resting on what happens to be on the runner image.
+      - name: Stamp the build date
+        run: node -e "const fs=require('fs'),f='App/version.json',v=JSON.parse(fs.readFileSync(f,'utf8'));v.date=new Date().toISOString().slice(0,10);fs.writeFileSync(f,JSON.stringify(v,null,2)+'\n')"
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3

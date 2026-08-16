@@ -54,6 +54,8 @@ let settings = null;
 // Both are fetched once, in connect().
 let promptUpdates = [];
 let promptChangelog = [];
+// { version, date } from version.json, or null when it cannot be read. Fetched once in connect().
+let appVersion = null;
 
 // ---------- Feedback and transitions ----------
 
@@ -982,7 +984,11 @@ async function renderSettings() {
       el(
         "div",
         { class: "settings-foot" },
-        textEl("a", tr("welcome.docs"), { href: tr("welcome.docsUrl"), target: "_blank", rel: "noopener" })
+        textEl("a", tr("welcome.docs"), { href: tr("welcome.docsUrl"), target: "_blank", rel: "noopener" }),
+        // Version and build date, needed only when something is being reported, which is what the
+        // settings page is already the destination for. No words around them, so nothing to
+        // translate. The date is absent when running from a checkout — it is stamped at deploy.
+        textEl("span", appVersion ? [`v${appVersion.version}`, appVersion.date].filter(Boolean).join(" · ") : "", { class: "muted small" })
       )
     )
   );
@@ -2129,6 +2135,7 @@ function buildWelcome(supported) {
 async function connect(handle) {
   promptUpdates = await store.ensureInit();
   promptChangelog = await store.loadChangelog();
+  appVersion = await store.loadVersion();
   settings = await store.readJSON("settings.json");
   syncSettingsDot();
   // First connection: default the relative path used in prompts to the folder's name; it can be

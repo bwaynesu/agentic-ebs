@@ -47,4 +47,13 @@ assert.match(
   `## ${version} needs "\`file name\` — why it changed" entries; the app relies on that shape to pull out the notes for each file`
 );
 
+// 4. The App's own version, which is a different number from the prompt one above: the prompts
+//    stand still through any number of UI releases, so the two must never be merged.
+//    `date` is deliberately not checked — it is empty in the repository and stamped by the Pages
+//    workflow at deploy, and testing it would force the date to be maintained by hand, which is
+//    the failure the stamping exists to avoid.
+const appVersion = JSON.parse(read("../version.json"));
+assert.match(appVersion.version, /^\d+\.\d+\.\d+$/, "App/version.json needs a semantic x.y.z version");
+assert.equal(typeof appVersion.date, "string", "App/version.json needs a date field, even when empty");
+
 console.log("ALL PASS");
