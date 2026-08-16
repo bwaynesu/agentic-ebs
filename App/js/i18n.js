@@ -51,6 +51,19 @@ const zhHant = {
   "app.refresh": "重新整理（重讀資料夾）",
   "app.toTop": "回到最上方",
 
+  // ---- Welcome (no folder linked yet) ----
+  // docsUrl points at the language's own manual on GitHub, which renders the md; the copy served
+  // next to index.html is raw text in a browser.
+  "welcome.lead": "以歷史工時校正 AI agent 估時的任務卡工具。",
+  "welcome.needTitle": "開始前需要",
+  "welcome.needBrowser": "Chrome 或 Edge（需要 File System Access API）",
+  "welcome.needAgent": "一個可在開發專案目錄下執行的 AI agent（本工具不呼叫任何 API）",
+  "welcome.needFolder": "一個存放任務資料的資料夾",
+  "welcome.folderNote": "在開發專案下新建一個空資料夾存放任務資料，例如 ebs-data。",
+  "welcome.docs": "操作說明",
+  "welcome.docsUrl": "https://github.com/bwaynesu/agentic-ebs/blob/main/App/README.zh-Hant.md",
+  "welcome.local": "資料儲存於本機資料夾，不經任何伺服器。",
+
   // ---- Common actions ----
   "act.save": "儲存",
   "act.cancel": "取消",
@@ -331,6 +344,17 @@ const en = {
   "app.collapseAll": "Collapse all sections",
   "app.refresh": "Refresh (re-read the folder)",
   "app.toTop": "Back to top",
+
+  // ---- Welcome (no folder linked yet) ----
+  "welcome.lead": "Task cards whose agent estimates are corrected by the hours you actually spend.",
+  "welcome.needTitle": "Before you start",
+  "welcome.needBrowser": "Chrome or Edge (the File System Access API is required)",
+  "welcome.needAgent": "An AI agent that runs in your project directory (this tool calls no API of its own)",
+  "welcome.needFolder": "A folder to hold the task data",
+  "welcome.folderNote": "Create an empty folder inside your project for the task data, e.g. ebs-data.",
+  "welcome.docs": "Documentation",
+  "welcome.docsUrl": "https://github.com/bwaynesu/agentic-ebs/blob/main/App/README.md",
+  "welcome.local": "Data is stored in a local folder. Nothing is sent to a server.",
 
   // ---- Common actions ----
   "act.save": "Save",

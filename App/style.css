@@ -809,6 +809,51 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); width
   border-radius: var(--radius);
 }
 
+/* The pre-connection screen. Narrow on purpose: it is read once, and a 1180px-wide paragraph is
+   read by nobody. */
+.welcome {
+  max-width: 34rem;
+  margin: var(--sp-5) auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--sp-5);
+}
+
+.welcome-lead { font-size: var(--fs-lg); margin-bottom: var(--sp-5); }
+.welcome h2 { font-size: var(--fs-md); margin-bottom: var(--sp-2); }
+.welcome-needs { padding-left: var(--sp-4); color: var(--text-dim); font-size: var(--fs-sm); }
+.welcome-needs li { margin-bottom: var(--sp-1); }
+
+.welcome-cta { margin-top: var(--sp-5); text-align: center; }
+.welcome-cta button { font-size: var(--fs-md); padding: var(--sp-2) var(--sp-5); }
+.welcome-cta p { margin-top: var(--sp-2); }
+
+/* The one state the visitor cannot act on, so it gets the warning treatment rather than a note:
+   there is no button to press and no point looking for one. */
+.welcome-blocked {
+  background: var(--warn-soft);
+  border: 1px solid var(--warn-border);
+  color: var(--warn);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3);
+}
+
+.welcome-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border);
+}
+
+/* Links get no styling anywhere else in the app — this is the first one — so the browser default
+   (a fixed blue, then purple once visited) would be the only color on the page that ignores the
+   theme. */
+.welcome-foot a { color: var(--accent); font-size: var(--fs-sm); }
+
 /* ---------- transitions ---------- */
 
 /* View Transitions: the browser handles the cross-fade between list and detail natively */

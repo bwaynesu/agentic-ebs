@@ -2027,6 +2027,57 @@ async function renderDetail(id) {
   });
 }
 
+// ---------- Welcome (shown while no folder is linked) ----------
+//
+// Without this the first visitor gets a header and an empty page: nothing says what the tool is,
+// what it needs, or that the hardest prerequisite (an agent that runs in the project directory)
+// is not part of the App at all. The unsupported-browser case was worse still — the one state the
+// visitor cannot act on was reported in the smallest text on the page, in a header span that
+// ellipsises as soon as the window narrows.
+//
+// main is never cleared here. Every caller reaches this with an empty main, and the moment a
+// folder connects, renderList goes through swapView, which owns the clearing.
+function buildWelcome(supported) {
+  const box = el("section", { class: "welcome" });
+  box.append(textEl("p", tr("welcome.lead"), { class: "welcome-lead" }));
+
+  if (!supported) {
+    box.append(textEl("p", tr("err.unsupported"), { class: "welcome-blocked" }));
+  } else {
+    // Spelled out rather than looped over a key array, so i18n.test.mjs's scan for literal tr("…")
+    // calls can see all three and keep reporting them if one loses its translation.
+    const needs = el(
+      "ul",
+      { class: "welcome-needs" },
+      textEl("li", tr("welcome.needBrowser")),
+      textEl("li", tr("welcome.needAgent")),
+      textEl("li", tr("welcome.needFolder"))
+    );
+    box.append(textEl("h2", tr("welcome.needTitle")), needs);
+    // Delegating to the header button keeps one copy of the "reauthorize the remembered handle,
+    // otherwise open the picker" logic. A click dispatched from inside a real click handler still
+    // carries user activation, so showDirectoryPicker is not blocked.
+    box.append(
+      el(
+        "div",
+        { class: "welcome-cta" },
+        textEl("button", tr("app.pickDir"), { class: "primary", type: "button", onclick: () => pickBtn.click() }),
+        textEl("p", tr("welcome.folderNote"), { class: "muted small" })
+      )
+    );
+  }
+
+  box.append(
+    el(
+      "div",
+      { class: "welcome-foot" },
+      textEl("a", tr("welcome.docs"), { href: tr("welcome.docsUrl"), target: "_blank", rel: "noopener" }),
+      textEl("span", tr("welcome.local"), { class: "muted small" })
+    )
+  );
+  return box;
+}
+
 // ---------- Connection ----------
 
 async function connect(handle) {
@@ -2043,6 +2094,7 @@ async function connect(handle) {
   connected = true;
   statusEl.textContent = tr("app.dirConnected", { name: handle.name });
   pickBtn.hidden = true; // changing folders moved to the settings page
+  settingsBtn.disabled = false;
   // Make the list the base of the history. Without this line the entry we arrived on has a null
   // state, renderList judges it "different" and pushes a new one — so pressing back on the list
   // returns to that null entry, redraws the list again, and looks like nothing happened.
@@ -2091,6 +2143,8 @@ async function tryConnect(handle) {
     }
     pickBtn.hidden = false;
     pickBtn.disabled = false;
+    settingsBtn.disabled = true;
+    main.append(buildWelcome(true)); // the page would otherwise go blank with only the header line to explain it
     return false;
   }
 }
@@ -2160,7 +2214,11 @@ langSelect.addEventListener("change", () => {
   location.reload();
 });
 
-document.getElementById("settings-btn").addEventListener("click", () => {
+// Disabled until a folder is connected. Leaving it clickable but inert is the worst of the three
+// options: it is the first thing a confused visitor presses, and nothing happens.
+const settingsBtn = document.getElementById("settings-btn");
+settingsBtn.disabled = true;
+settingsBtn.addEventListener("click", () => {
   if (connected) renderSettings();
 });
 
@@ -2188,6 +2246,7 @@ pickBtn.addEventListener("click", async () => {
   if (!window.showDirectoryPicker) {
     statusEl.textContent = tr("err.unsupported");
     pickBtn.disabled = true;
+    main.append(buildWelcome(false));
     return;
   }
   const handle = await store.getDataDir();
@@ -2196,7 +2255,9 @@ pickBtn.addEventListener("click", async () => {
     // the page sits blank, and nothing on screen says what happened (this happened).
     await tryConnect(handle);
   } else {
+    // No "relink" wording here: nothing is remembered, so this really is a first pick. Relink
+    // belongs to tryConnect's failure path, where a folder did exist and no longer answers.
     statusEl.textContent = tr("app.dirNoneHint");
-    pickBtn.textContent = tr("app.pickDirRelink");
+    main.append(buildWelcome(true));
   }
 })();
