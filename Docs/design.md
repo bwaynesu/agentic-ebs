@@ -71,6 +71,33 @@ During analysis the agent picks tags from a small fixed list and writes them int
 
 The list is kept small and stable on purpose: split it too finely and no single pool ever collects enough samples.
 
+### 4.8 Before the first folder is linked
+
+The page opens with no data of its own, and three things have to be true before anything works: a Chromium browser, an agent that runs inside the development project, and a folder to write into. Only the first is detectable. So the pre-connection screen states all three, and the browser check renders there as well rather than in the header — an unsupported browser is the one state the visitor cannot act on, and it used to be reported in the smallest text on the page.
+
+Two rules follow from that screen:
+
+- **Controls that cannot act are disabled or hidden.** Settings, refresh and collapse-all all did nothing before a folder was connected, while looking exactly as usable as they do afterwards. A visitor with no folder linked presses Settings first.
+- **The picker is answered before it is committed.** The folder is adopted only after its contents have been looked at, so declining leaves whatever was linked before untouched.
+
+### 4.9 Guarding the folder choice
+
+Pointing the picker at the development project itself is the expensive mistake: the app would then create `settings.json`, `calendar.json`, `prompts/` and `tasks/` in the project root, usually under version control. Wording carries most of the load — everything naming the folder calls it the task data folder, and both places that open a picker say to create an empty folder inside the project. The check behind it reads the top-level entries: empty and "ours" (a `settings.json` or a `tasks/` is present) pass, and anything else asks once.
+
+There is deliberately no list of project markers to match against (`.git`, `package.json`, `Assets`, …). A project directory is never empty, so "holds something, and none of it is ours" already covers the case, and there is no list to keep current for the next language or build tool.
+
+### 4.10 The two settings nobody is forced to fill
+
+A brand-new folder opens on the settings page rather than an empty task list, because two fields there shape every analysis and neither reports an error when wrong: the relative path to the folder, and the git author.
+
+Neither can be validated. The browser never learns a folder's absolute path, so the app cannot tell where the project is; any non-empty string passes. A gate would therefore give false assurance while trapping the user, so instead:
+
+- The path is seeded as `./<folder name>`, which at least reads as a path rather than a name, and it is badged "check this" — not "required", since it is never empty.
+- The git author is badged "worth filling in", first visit only. Left up whenever the field was empty, it would nag forever at anyone not using git.
+- The path is printed where it is used, on the button that copies the analysis prompt. Until then it existed only inside the copied text, so a wrong value surfaced as the agent reporting a missing file, minutes later, with nothing pointing back at the setting.
+
+Save and Cancel both lead to the task list. Nothing here blocks navigation; the only thing in the app that may is unsaved edited content, which is about losing work rather than being incomplete.
+
 ## 5. Cold start
 
 With fewer than six finished tasks in the pool, a set of deliberately wide made-up velocities is mixed in, as EBS suggests (e.g. {0.3, 0.5, 0.7, 1.0, 1.3}), and the app marks the distribution as indicative only.

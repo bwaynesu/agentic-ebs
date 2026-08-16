@@ -76,4 +76,13 @@ assert.deepEqual(undef, [], `undefined CSS variables are used: ${undef}`);
 const softRings = [...css.matchAll(/box-shadow:\s*0\s+0\s+0\s+[\d.]+\w*\s+var\((--[\w-]*-soft)\)/g)].map((m) => m[1]);
 assert.deepEqual(softRings, [], `${softRings} draws a solid ring: soft is a fill color and disappears in dark mode, use the base color for strokes`);
 
+// 8. A sticky element has to paint its own background. It stays put while the rest of the page
+//    slides underneath it, so a transparent one lets the content scroll straight through the
+//    text sitting on it and neither is readable. The failure only shows up mid-scroll, which is
+//    exactly the state a static check can reach and an eye usually does not.
+const stickyNoBg = [...css.matchAll(/(?:^|})\s*([^{}]*?)\{([^}]*position:\s*sticky[^}]*)\}/g)]
+  .filter(([, , body]) => !/background:/.test(body))
+  .map(([, selector]) => selector.trim().split("\n").pop().trim());
+assert.deepEqual(stickyNoBg, [], `${stickyNoBg} is sticky without a background, so the page scrolls through it`);
+
 console.log("ALL PASS");
