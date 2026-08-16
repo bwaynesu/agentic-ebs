@@ -68,7 +68,7 @@ python -m http.server 8765
 
 | agent 執行的開發專案目錄 | 資料夾實際位置 | 「任務資料夾相對路徑」要填 |
 |---|---|---|
-| `~/code/MyGame` | `~/code/MyGame/ebs-data` | `ebs-data`（預設值即正確）|
+| `~/code/MyGame` | `~/code/MyGame/ebs-data` | `./ebs-data`（預設值即正確）|
 | `~/code/MyGame` | `~/code/MyGame/docs/ebs-data` | `docs/ebs-data` |
 | `~/code/MyGame` | `~/code/ebs-data` | `../ebs-data`（agent 需有存取上層目錄的權限）|
 

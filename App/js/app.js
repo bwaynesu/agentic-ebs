@@ -934,10 +934,9 @@ async function renderSettings() {
           calBox
         )
       ),
-      // Unlike the path, this one can be checked, so the badge stays until it is filled in rather
-      // than only on the first visit. Empty raises no error; it silently drops the --author filter
-      // and hands the agent the whole team's history.
-      group(tr("group.git"), field(tr("field.gitAuthor"), gitInput, cur.gitAuthor ? null : tr("badge.suggested"))),
+      // First visit only, like the path. Leaving it up whenever the field is empty would nag
+      // forever at anyone not using git for version control, with no way to clear it.
+      group(tr("group.git"), field(tr("field.gitAuthor"), gitInput, firstRun ? tr("badge.suggested") : null)),
       group(
         tr("group.prompts"),
         // The note sits under the input as part of the same .field (smaller gap). Do not give it
@@ -956,7 +955,7 @@ async function renderSettings() {
       ),
       el(
         "div",
-        { class: "toolbar" },
+        { class: "toolbar settings-actions" },
         textEl("button", tr("act.save"), {
           onclick: async () => {
             const fresh = await store.readJSON("settings.json");
@@ -975,6 +974,15 @@ async function renderSettings() {
           },
         }),
         textEl("button", tr("act.cancel"), { onclick: renderList })
+      ),
+      // The manual, reachable again. Its only other link is on the welcome screen, which
+      // disappears the moment a folder connects — after that there was no way back to it from
+      // inside the app at all. Below the action bar on purpose: this is the page footer, and the
+      // bar comes to rest just above it.
+      el(
+        "div",
+        { class: "settings-foot" },
+        textEl("a", tr("welcome.docs"), { href: tr("welcome.docsUrl"), target: "_blank", rel: "noopener" })
       )
     )
   );
@@ -1619,7 +1627,11 @@ function buildAnalyzeSection(task, understanding, approaches, requirement, estim
       el("div", { class: "toolbar" }, btn),
       textEl(
         "div",
-        ready ? tr("analyze.hint") : tr("analyze.needReq"),
+        // The path is spelled out because it is otherwise invisible: dataDirPath only ever
+        // appears inside the copied text, so a wrong value shows up as the agent reporting a
+        // missing file, minutes later, with nothing pointing back at the setting. Printed here it
+        // is checkable at a glance, and it stays useful long after the first-run badge is gone.
+        ready ? tr("analyze.hint", { path: `${dataDirPath()}/tasks/${task.id}/` }) : tr("analyze.needReq"),
         { class: ready ? "muted small" : "warn small" }
       )
     );
@@ -2123,7 +2135,11 @@ async function connect(handle) {
   // folder", so no extra setting is needed to remember whether setup has happened.
   firstRun = !settings.dataDirPath;
   if (firstRun) {
-    settings.dataDirPath = handle.name;
+    // "./" so the field reads as a path rather than a name — it is the one setting nobody can
+    // validate, and a bare "ebs-data" gives no hint that it is meant to be relative to the
+    // project. Typed values are left exactly as entered; normalising free text behind the user's
+    // back is not something this app does anywhere.
+    settings.dataDirPath = `./${handle.name}`;
     await store.writeJSON("settings.json", settings);
   }
   connected = true;

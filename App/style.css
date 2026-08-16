@@ -476,6 +476,24 @@ textarea { resize: vertical; line-height: 1.6; width: 100%; }
 }
 .field input.needs-attention { border-color: var(--accent); }
 
+/* Save and Cancel stay reachable without scrolling to the end. The settings page runs four groups
+   plus seven prompt editors, so leaving it used to mean scrolling past all of them first.
+   Sticky, not fixed: it pins to the viewport only while the form is on screen and then comes to
+   rest at the form's own end, so there is no bar hovering over short pages and no spacer needed
+   underneath. An opaque background is not decoration — without it the form scrolls through the
+   bar and both become unreadable. */
+.settings-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5; /* under the header (20) and the toasts (50) */
+  margin: var(--sp-3) 0 0;
+  padding: var(--sp-3) 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+
+.settings-foot { padding: var(--sp-3) 0; }
+
 .weekday-row { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
 .weekday { display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; color: var(--text); }
 .radio-row { display: flex; align-items: center; gap: var(--sp-2); cursor: pointer; }
@@ -867,7 +885,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); width
 /* Links get no styling anywhere else in the app — this is the first one — so the browser default
    (a fixed blue, then purple once visited) would be the only color on the page that ignores the
    theme. */
-.welcome-foot a { color: var(--accent); font-size: var(--fs-sm); }
+.welcome-foot a, .settings-foot a { color: var(--accent); font-size: var(--fs-sm); }
 
 /* ---------- transitions ---------- */
 

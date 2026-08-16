@@ -73,7 +73,7 @@ The folder name is filled in on first link, which is already correct when the fo
 
 | Project directory the agent runs in | Where the folder actually is | Path to enter |
 |---|---|---|
-| `~/code/MyGame` | `~/code/MyGame/ebs-data` | `ebs-data` (the default is already right) |
+| `~/code/MyGame` | `~/code/MyGame/ebs-data` | `./ebs-data` (the default is already right) |
 | `~/code/MyGame` | `~/code/MyGame/docs/ebs-data` | `docs/ebs-data` |
 | `~/code/MyGame` | `~/code/ebs-data` | `../ebs-data` (the agent needs access to the parent directory) |
 
