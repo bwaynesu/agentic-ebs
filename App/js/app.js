@@ -1629,8 +1629,9 @@ function buildAnalyzeSection(task, understanding, approaches, requirement, estim
         "div",
         // The path is spelled out because it is otherwise invisible: dataDirPath only ever
         // appears inside the copied text, so a wrong value shows up as the agent reporting a
-        // missing file, minutes later, with nothing pointing back at the setting. Printed here it
-        // is checkable at a glance, and it stays useful long after the first-run badge is gone.
+        // missing file, minutes later, with nothing pointing back at the setting. Printing it
+        // needs no accompanying explanation — someone who knows where their folder is can see at
+        // a glance that this is not it.
         ready ? tr("analyze.hint", { path: `${dataDirPath()}/tasks/${task.id}/` }) : tr("analyze.needReq"),
         { class: ready ? "muted small" : "warn small" }
       )
