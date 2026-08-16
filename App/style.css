@@ -461,6 +461,21 @@ textarea { resize: vertical; line-height: 1.6; width: 100%; }
 .field > span:first-child { font-weight: 600; color: var(--text); }
 .field select, .field input { align-self: flex-start; min-width: 12rem; }
 
+/* Fields worth a second look on a fresh folder. The word is the signal; the outline only points
+   at which box it belongs to. --accent itself, never --accent-soft: soft is a fill colour and its
+   dark-theme value sits close to the page background, so a line drawn with it is invisible. */
+.field-badge {
+  margin-left: var(--sp-2);
+  font-style: normal;
+  font-weight: 400;
+  font-size: var(--fs-xs);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-pill);
+  padding: 0.05rem 0.45rem;
+}
+.field input.needs-attention { border-color: var(--accent); }
+
 .weekday-row { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
 .weekday { display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; color: var(--text); }
 .radio-row { display: flex; align-items: center; gap: var(--sp-2); cursor: pointer; }

@@ -21,7 +21,7 @@ Then open <http://localhost:8765>. Any static server does the job when Python is
 ## First-time setup
 
 1. Click **Pick task data folder** at the top right and point it at a new, empty folder inside your project. The tool creates `settings.json`, `calendar.json`, `prompts/` and `tasks/` inside it.
-2. Open the settings page and fill in **Relative path from your project root** and **Git author**. Both affect the quality of the agent's analysis; how to fill them is described under [Settings page](#settings-page).
+2. The tool opens the settings page by itself on a first link. Two fields there carry a badge — **Relative path from your project root** and **Git author** — because both shape the quality of the agent's analysis and neither raises an error when left wrong; how to fill them is described under [Settings page](#settings-page).
 3. Later reloads remember the folder on their own. When the browser asks for permission again, one click on **Relink task data folder** restores it — authorisation needs a user gesture and cannot happen automatically.
 
 The folder can live inside or outside the development project, since the path used in prompts is relative to the project. Inside is the easier choice: most CLI agents refuse by default to touch anything outside their working directory. The price is remembering to add the folder to that project's `.gitignore`.

@@ -824,6 +824,11 @@ async function buildPromptEditors() {
   return box;
 }
 
+// Whether this folder has just been linked for the first time. Kept in a module variable rather
+// than passed as an argument, so ⟳ (which calls rerender() with no arguments) does not silently
+// drop the badges. renderList clears it: any route to the list means setup is over.
+let firstRun = false;
+
 async function renderSettings() {
   if (!(await confirmDiscard())) return;
   rerender = renderSettings; // without this line, ⟳ on the settings page redraws the home list
@@ -853,7 +858,19 @@ async function renderSettings() {
   const calBox = el("div");
   await renderCalendarEditor(calBox);
 
-  const field = (label, node) => el("label", { class: "field" }, textEl("span", label), node);
+  // The badge carries the whole instruction, which is why there is no banner at the top of the
+  // page telling the user which fields to look at. A banner long enough to be useful is a banner
+  // nobody reads, and it repeats what the labels already say.
+  // It is a word, not just a colour: --accent against --border collapses under red-green colour
+  // blindness, the same reason the chosen approach carries a "✔" as well as its green.
+  const field = (label, node, badge = null) => {
+    const caption = textEl("span", label);
+    if (badge) {
+      caption.append(textEl("em", badge, { class: "field-badge" }));
+      node.classList?.add("needs-attention");
+    }
+    return el("label", { class: "field" }, caption, node);
+  };
   // One settings category: a heading plus a divider (drawn in CSS), wrapping a few fields.
   const group = (title, ...children) => el("section", { class: "settings-group" }, textEl("h3", title), ...children);
   const promptBox = await buildPromptEditors();
@@ -883,7 +900,12 @@ async function renderSettings() {
             textEl("p", tr("folder.note"), { class: "muted small" })
           )
         ),
-        field(tr("field.dataDirPath"), pathInput)
+        // "Confirm", not "required": the field is never empty. A first link seeds it with the
+        // folder name, and saving falls back to that name — so no emptiness check could ever
+        // catch a wrong value, and a badge that says "required" about a condition already met is
+        // a badge the user learns to skip. It only appears on the first visit to a new folder;
+        // after that, silence.
+        field(tr("field.dataDirPath"), pathInput, firstRun ? tr("badge.confirm") : null)
       ),
       group(
         tr("group.workTime"),
@@ -912,7 +934,10 @@ async function renderSettings() {
           calBox
         )
       ),
-      group(tr("group.git"), field(tr("field.gitAuthor"), gitInput)),
+      // Unlike the path, this one can be checked, so the badge stays until it is filled in rather
+      // than only on the first visit. Empty raises no error; it silently drops the --author filter
+      // and hands the agent the whole team's history.
+      group(tr("group.git"), field(tr("field.gitAuthor"), gitInput, cur.gitAuthor ? null : tr("badge.suggested"))),
       group(
         tr("group.prompts"),
         // The note sits under the input as part of the same .field (smaller gap). Do not give it
@@ -977,6 +1002,7 @@ let cameFrom = null;
 
 async function renderList() {
   if (!(await confirmDiscard())) return;
+  firstRun = false; // reaching the list at all means the first-run setup is behind us
   rerender = renderList;
   syncHistory({ view: "list" });
   const back = cameFrom;
@@ -2093,8 +2119,10 @@ async function connect(handle) {
   settings = await store.readJSON("settings.json");
   syncSettingsDot();
   // First connection: default the relative path used in prompts to the folder's name; it can be
-  // edited later on the settings page.
-  if (!settings.dataDirPath) {
+  // edited later on the settings page. That missing field is also the signal for "brand-new
+  // folder", so no extra setting is needed to remember whether setup has happened.
+  firstRun = !settings.dataDirPath;
+  if (firstRun) {
     settings.dataDirPath = handle.name;
     await store.writeJSON("settings.json", settings);
   }
@@ -2106,6 +2134,11 @@ async function connect(handle) {
   // state, renderList judges it "different" and pushes a new one — so pressing back on the list
   // returns to that null entry, redraws the list again, and looks like nothing happened.
   history.replaceState({ view: "list" }, "");
+  // A brand-new folder opens on the settings page. Two of its fields decide the quality of every
+  // analysis and neither raises an error when wrong, so the one moment the user is guaranteed to
+  // be looking is the moment to show them. It is not a gate: Save and Cancel both leave for the
+  // list, and nothing here blocks navigation.
+  if (firstRun) return renderSettings();
   await restoreView();
 }
 
