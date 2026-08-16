@@ -38,7 +38,7 @@ export function defaultOutputLang(code = current) {
 
 const zhHant = {
   // ---- Header & global ----
-  "app.title": "EBS 時程評估",
+  "app.title": "Agentic EBS",
   "app.dirNone": "未連結資料夾",
   "app.dirNoneHint": "未連結資料夾（點擊右方按鈕選擇或重新連結）",
   "app.dirConnected": "已連結資料夾：{name}",
@@ -319,7 +319,7 @@ const zhHant = {
 
 const en = {
   // ---- Header & global ----
-  "app.title": "EBS Scheduling",
+  "app.title": "Agentic EBS",
   "app.dirNone": "No data folder linked",
   "app.dirNoneHint": "No data folder linked (use the button on the right to pick or relink)",
   "app.dirConnected": "Linked folder: {name}",
