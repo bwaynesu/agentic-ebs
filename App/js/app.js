@@ -398,6 +398,36 @@ function editIcon(label, onclick) {
   return btn;
 }
 
+// An action button that lives in a section's <summary>, so the flow's actions sit in fixed places
+// instead of appearing and vanishing inside the sections. Two things it must do that a plain
+// button does not:
+//   - block the details toggle, like editIcon and readingHint above
+//   - stay explainable while disabled. A disabled button fires no hover and takes no focus, so
+//     its title never shows; the reason goes on a wrapping span instead. Without that the user
+//     faces a grey button whose explanation is inside the section they would have to expand to
+//     read — and being able to act without expanding is the whole point of moving it up here.
+// `primary` marks the one action that is the next thing to do (see flowStateOf). It fills the
+// button instead of outlining it, so the signal is a shape difference and not only a hue —
+// colour alone would collapse under red-green colour blindness, the same reason the chosen
+// approach carries a "✔" next to its green.
+function actionBtn(label, { onclick, disabled = false, reason = null, primary = false }) {
+  // A filled but unpressable button is the worst of both: it shouts "do this" and then refuses.
+  // The two only coincide when a prompt file is missing from the folder — the phase conditions
+  // otherwise guarantee the current stage's button is usable.
+  const lit = primary && !disabled;
+  const btn = textEl("button", label, { class: lit ? "section-action primary" : "section-action", type: "button" });
+  btn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); onclick(); });
+  btn.disabled = disabled;
+  return disabled && reason ? el("span", { title: reason }, btn) : btn;
+}
+
+// Pins a group of actions to the right end of a section heading. Returns the section so it can be
+// used as the return value directly.
+function sectionActions(sec, ...nodes) {
+  sec.querySelector("summary").append(el("span", { class: "section-actions" }, ...nodes));
+  return sec;
+}
+
 // In-place edit box: the input plus save/cancel. No save-on-blur — clicking the scrollbar inside
 // a textarea counts as a blur. ownerId is the id of the container this box sits in (a section or
 // the title row); once the content changes it is registered in unsavedIn so the gates know which
@@ -1436,7 +1466,7 @@ async function persistTasks(changedTasks) {
 // Left rail: back, collapse, status, the primary button (start / complete / restart), the time
 // summary, and the flow navigation. The content column is ordered by workflow and the actions
 // stay in view, so the user walks the flow top to bottom without jumping around.
-function buildRail(task, allTasks, estimate, calendar, nowISO, wrap, requirement) {
+function buildRail(task, allTasks, estimate, calendar, nowISO, flow) {
   const doAction = async (changed) => {
     await persistTasks(changed);
     await refreshDetail(task.id);
@@ -1447,7 +1477,7 @@ function buildRail(task, allTasks, estimate, calendar, nowISO, wrap, requirement
   // a requirement description being edited along the way (this happened).
   // The arguments are passed straight through to the next buildRail: this button changes no data,
   // so the redrawn content is necessarily identical.
-  const args = [task, allTasks, estimate, calendar, nowISO, wrap, requirement];
+  const args = [task, allTasks, estimate, calendar, nowISO, flow];
   const setCollapsed = (v) => {
     localStorage.setItem("ebs.railCollapsed", v);
     document.getElementById("side-rail")?.replaceWith(buildRail(...args));
@@ -1485,7 +1515,7 @@ function buildRail(task, allTasks, estimate, calendar, nowISO, wrap, requirement
     }
     // Warn while the clock is still running. Miss it and the only way to record the time is to
     // hit restart and open the clock again — wrap-up counts as work hours too.
-    if (wrap.needs) {
+    if (flow.wrapNeeded) {
       rail.append(textEl("div", tr("rail.noWrapWarn"), { class: "warn small" }));
     }
     rail.append(
@@ -1534,14 +1564,7 @@ function buildRail(task, allTasks, estimate, calendar, nowISO, wrap, requirement
   rail.append(stats);
 
   // Flow navigation: anchors that jump to sections, with the current phase marked.
-  const phase = currentPhase({
-    status: task.status,
-    hasReq: hasRequirement(requirement), // same condition as the "hand to agent for analysis" button
-    hasEstimate: !!estimate,
-    selectedApproach: task.selectedApproach,
-    hasSteps: wrap.hasSteps,
-    wrapNeeded: wrap.needs,
-  });
+  const phase = flow.phase;
   // Every section of the detail page is listed, always, in page order. Sections that cannot be
   // acted on yet stay in place with their button disabled rather than disappearing, so the flow
   // is visible from the first day of a card — the nav is a map of the process, not a list of what
@@ -1623,25 +1646,15 @@ async function copyToClipboard(text) {
   toast(tr("toast.copied"));
 }
 
-function buildAnalyzeSection(task, understanding, approaches, requirement, estimate) {
+function buildAnalyzeSection(task, understanding, approaches, requirement, estimate, phase) {
   const node = el("div");
-  if (task.status !== "done") {
-    // No copying until the requirement is written: an agent handed an empty requirement can only
-    // come back and ask what you want, which wastes the round trip. (buildStepsSection does the
-    // same thing when no approach has been chosen.)
-    const ready = hasRequirement(requirement);
-    const btn = textEl("button", tr("analyze.copyPrompt"), {
-      onclick: async () => {
-        const tpl = await store.readText("prompts/template.md");
-        if (!tpl) { toast(tr("err.fileMissing", { path: "prompts/template.md" }), "err"); return; }
-        const filled = tpl.replaceAll("<taskId>", task.id).replaceAll("<dataDir>", dataDirPath()) + langLine();
-        await copyToClipboard(filled);
-      },
-    });
-    // Use the .disabled property: el() goes through setAttribute, where even false disables it.
-    btn.disabled = !ready;
+  // No copying until the requirement is written: an agent handed an empty requirement can only
+  // come back and ask what you want, which wastes the round trip. (buildStepsSection does the
+  // same thing when no approach has been chosen.)
+  const ready = hasRequirement(requirement);
+  const done = task.status === "done";
+  if (!done) {
     node.append(
-      el("div", { class: "toolbar" }, btn),
       textEl(
         "div",
         // The path is spelled out because it is otherwise invisible: dataDirPath only ever
@@ -1658,7 +1671,24 @@ function buildAnalyzeSection(task, understanding, approaches, requirement, estim
     section(tr("sec.understanding"), mdBlock(understanding)),
     section(tr("sec.approaches"), approachBlocks(approaches, task.selectedApproach, (estimate?.approaches ?? []).map((a) => a.id)))
   );
-  return section(tr("sec.analyze"), node, true, "sec-analyze");
+  const sec = section(tr("sec.analyze"), node, true, "sec-analyze");
+  // A done card carries no flow actions at all: it is velocity evidence, and re-running the
+  // analysis of finished work would only overwrite what the estimate was actually judged against.
+  if (done) return sec;
+  return sectionActions(
+    sec,
+    actionBtn(tr("analyze.copyPrompt"), {
+      disabled: !ready,
+      primary: phase === "sec-analyze",
+      reason: tr("analyze.needReq"),
+      onclick: async () => {
+        const tpl = await store.readText("prompts/template.md");
+        if (!tpl) { toast(tr("err.fileMissing", { path: "prompts/template.md" }), "err"); return; }
+        const filled = tpl.replaceAll("<taskId>", task.id).replaceAll("<dataDir>", dataDirPath()) + langLine();
+        await copyToClipboard(filled);
+      },
+    })
+  );
 }
 
 // The approach analysis is split into one block per approach, all collapsed by default. What you
@@ -1795,50 +1825,61 @@ function readingHint() {
 
 // Implementation step card: the agent produces steps.md once the user confirms an approach.
 // Until then, this offers the prompt that asks the agent to generate it.
-function buildStepsSection(task, steps, stepsTemplate) {
+function buildStepsSection(task, steps, stepsTemplate, phase) {
   const dataDir = dataDirPath();
   const node = el("div");
+  // No copying until an approach is chosen: the agent could only come back and ask which one,
+  // wasting the round trip.
+  const picked = task.selectedApproach;
+  const genPrompt = (stepsTemplate ?? "")
+    .replaceAll("<taskId>", task.id)
+    .replaceAll("<dataDir>", dataDir)
+    .replaceAll("<approachId>", picked ?? "") + langLine();
+  // This sentence is a prompt to paste to an agent, not UI text: the instruction language
+  // follows `prompts/` (English, the language of the source of truth) and does not change with
+  // the UI language. The output language is specified separately by langLine() (outputLang on
+  // the settings page).
+  const implPrompt = `Read the execution rules in ${dataDir}/prompts/implement.md and implement the step cards in ${dataDir}/tasks/${task.id}/steps.md one at a time.` + langLine();
+
   if (steps === null) {
-    // No copying until an approach is chosen: the agent could only come back and ask which one,
-    // wasting the round trip.
-    const picked = task.selectedApproach;
-    const genPrompt = (stepsTemplate ?? "")
-      .replaceAll("<taskId>", task.id)
-      .replaceAll("<dataDir>", dataDir)
-      .replaceAll("<approachId>", picked ?? "") + langLine();
-    const btn = textEl("button", tr("steps.copyGen"), {
-      onclick: () => copyToClipboard(genPrompt),
-    });
-    // Use the .disabled property: el() goes through setAttribute, where even false disables it.
-    btn.disabled = !picked || !stepsTemplate;
     node.append(
       textEl(
         "div",
         picked ? tr("steps.hintPicked") : tr("steps.hintNoPick"),
         { class: picked ? "muted small" : "warn small" }
-      ),
-      el("div", { class: "toolbar" }, btn)
+      )
     );
     if (!stepsTemplate) node.append(textEl("div", tr("err.fileMissing", { path: "prompts/steps-template.md" }), { class: "warn small" }));
     else if (picked) node.append(textEl("div", genPrompt, { class: "pre-wrap small muted" }));
   } else {
-    // This sentence is a prompt to paste to an agent, not UI text: the instruction language
-    // follows `prompts/` (English, the language of the source of truth) and does not change with
-    // the UI language. The output language is specified separately by langLine() (outputLang on
-    // the settings page).
-    const implPrompt = `Read the execution rules in ${dataDir}/prompts/implement.md and implement the step cards in ${dataDir}/tasks/${task.id}/steps.md one at a time.` + langLine();
-    node.append(
-      el(
-        "div",
-        { class: "toolbar" },
-        textEl("button", tr("steps.copyImpl"), {
-          onclick: () => copyToClipboard(implPrompt),
-        })
-      ),
-      mdBlock(steps)
-    );
+    node.append(mdBlock(steps));
   }
-  return section(tr("sec.steps"), node, true, "sec-steps");
+  const sec = section(tr("sec.steps"), node, true, "sec-steps");
+  if (task.status === "done") return sec;
+  return sectionActions(
+    sec,
+    // Once steps.md exists this becomes a re-run, and it says so: it overwrites the card the user
+    // may already be working from. Before the actions moved up here the button simply vanished at
+    // that point, and re-running meant deleting the file by hand.
+    actionBtn(steps === null ? tr("steps.copyGen") : tr("steps.copyGenAgain"), {
+      disabled: !picked || !stepsTemplate,
+      primary: phase === "sec-steps",
+      reason: picked ? tr("err.fileMissing", { path: "prompts/steps-template.md" }) : tr("steps.hintNoPick"),
+      onclick: () => copyToClipboard(genPrompt),
+    }),
+    // Lit during sec-wrap, alongside the wrap-up button. Implementing produces no file the app can
+    // see, so the phase jumps to sec-wrap the moment steps.md lands — while what actually comes
+    // next is the implementation. Lighting only the wrap-up button there reads as "you are done,
+    // go wrap up" and walks the user straight past the work. Two lit buttons cost a glance; being
+    // pointed at the wrong one costs a wasted agent round trip. This is the one place where the
+    // buttons say more than the nav's ●, and it is deliberate.
+    actionBtn(tr("steps.copyImpl"), {
+      disabled: steps === null,
+      primary: phase === "sec-wrap",
+      reason: tr("steps.noSteps"),
+      onclick: () => copyToClipboard(implPrompt),
+    })
+  );
 }
 
 // Wrap-up: once the implementation is settled, ask the agent to fill in the three documents from
@@ -1846,7 +1887,7 @@ function buildStepsSection(task, steps, stepsTemplate) {
 // means hitting restart first to get the clock running again. Otherwise that discussion falls
 // into no interval at all and velocity comes out overstated, making the work look faster than
 // it was.
-function buildWrapSection(task, steps, docs, wrapTemplate) {
+function buildWrapSection(task, steps, docs, wrapTemplate, phase) {
   const dataDir = dataDirPath();
   const node = el("div");
   const any = docs.finalSpec !== null || docs.specDiff !== null || docs.logic !== null;
@@ -1865,18 +1906,12 @@ function buildWrapSection(task, steps, docs, wrapTemplate) {
       )
     );
   } else {
-    const btn = textEl("button", any ? tr("wrap.copyAgain") : tr("wrap.copy"), {
-      onclick: () => copyToClipboard(prompt),
-    });
-    // Use the .disabled property: el() goes through setAttribute, where even false disables it.
-    btn.disabled = !wrapTemplate || !ready;
     node.append(
       textEl(
         "div",
         !ready ? tr("wrap.hintNoSteps") : any ? tr("wrap.hintAny") : tr("wrap.hintNone"),
         { class: ready ? "muted small" : "warn small" }
-      ),
-      el("div", { class: "toolbar" }, btn)
+      )
     );
     if (!wrapTemplate) node.append(textEl("div", tr("err.fileMissing", { path: "prompts/wrap-up-template.md" }), { class: "warn small" }));
     else if (!any && ready) node.append(textEl("div", prompt, { class: "pre-wrap small muted" }));
@@ -1886,7 +1921,17 @@ function buildWrapSection(task, steps, docs, wrapTemplate) {
     section(tr("sec.specDiff"), mdBlock(docs.specDiff)),
     section(tr("sec.logic"), mdBlock(docs.logic))
   );
-  return section(tr("sec.wrap"), node, true, "sec-wrap");
+  const sec = section(tr("sec.wrap"), node, true, "sec-wrap");
+  if (task.status === "done") return sec;
+  return sectionActions(
+    sec,
+    actionBtn(any ? tr("wrap.copyAgain") : tr("wrap.copy"), {
+      disabled: !wrapTemplate || !ready,
+      primary: phase === "sec-wrap",
+      reason: ready ? tr("err.fileMissing", { path: "prompts/wrap-up-template.md" }) : tr("wrap.hintNoSteps"),
+      onclick: () => copyToClipboard(prompt),
+    })
+  );
 }
 
 // Off-window hours (lunch break / overtime / holidays) are counted or not at the user's
@@ -1995,21 +2040,36 @@ async function loadDetail(id) {
   return { task, allTasks, requirement, understanding, approaches, estimate, steps, stepsTemplate, finalSpec, specDiff, logic, wrapTemplate, calendar, nowISO: new Date().toISOString() };
 }
 
-// The rail needs two things about the wrap-up stage: whether the step card exists (decides the
-// phase the flow nav points at) and whether to nag about it (decides the warning). Both call
-// sites share one computation so they cannot drift apart later.
-const wrapStateOf = (d) => ({
-  hasSteps: d.steps !== null,
-  needs: d.steps !== null && d.finalSpec === null && d.specDiff === null && d.logic === null,
-});
+// Where the card stands in the flow, computed once and handed to both the rail and the sections.
+// It has to be one computation: the rail draws ● on the current phase and the sections colour the
+// button belonging to it, and those two pointing at different stages is worse than neither
+// pointing at all — the user stops to work out which one is lying.
+function flowStateOf(d) {
+  const hasSteps = d.steps !== null;
+  const wrapNeeded = hasSteps && d.finalSpec === null && d.specDiff === null && d.logic === null;
+  return {
+    hasSteps,
+    wrapNeeded,
+    phase: currentPhase({
+      status: d.task.status,
+      hasReq: hasRequirement(d.requirement), // same condition as the "hand to agent for analysis" button
+      hasEstimate: !!d.estimate,
+      selectedApproach: d.task.selectedApproach,
+      hasSteps,
+      wrapNeeded,
+    }),
+  };
+}
 
-async function buildDetailSections(d) {
+// `phase` marks which section's action is the next thing to do; that button turns primary. It is
+// the same value the rail draws ● on, so the two can never disagree.
+async function buildDetailSections(d, phase) {
   return [
     buildRequirementSection(d.task, d.requirement),
-    buildAnalyzeSection(d.task, d.understanding, d.approaches, d.requirement, d.estimate),
+    buildAnalyzeSection(d.task, d.understanding, d.approaches, d.requirement, d.estimate, phase),
     await buildEstimateSection(d.task, d.estimate, d.allTasks, d.calendar),
-    buildStepsSection(d.task, d.steps, d.stepsTemplate),
-    buildWrapSection(d.task, d.steps, { finalSpec: d.finalSpec, specDiff: d.specDiff, logic: d.logic }, d.wrapTemplate),
+    buildStepsSection(d.task, d.steps, d.stepsTemplate, phase),
+    buildWrapSection(d.task, d.steps, { finalSpec: d.finalSpec, specDiff: d.specDiff, logic: d.logic }, d.wrapTemplate, phase),
     buildTimeSection(d.task, d.estimate, d.calendar, d.nowISO),
   ];
 }
@@ -2022,9 +2082,10 @@ async function buildDetailSections(d) {
 async function refreshDetail(id) {
   const d = await loadDetail(id);
   if (!d) return renderList();
-  const sections = await buildDetailSections(d);
+  const flow = flowStateOf(d);
+  const sections = await buildDetailSections(d, flow.phase);
   if (!sections.every((s) => document.getElementById(s.id))) return renderDetail(id);
-  document.getElementById("side-rail")?.replaceWith(buildRail(d.task, d.allTasks, d.estimate, d.calendar, d.nowISO, wrapStateOf(d), d.requirement));
+  document.getElementById("side-rail")?.replaceWith(buildRail(d.task, d.allTasks, d.estimate, d.calendar, d.nowISO, flow));
   // Do not swap a section that is being edited and not yet saved. Start/complete and interval
   // editing both land here, and neither should swallow half-typed text.
   for (const s of sections) {
@@ -2080,11 +2141,12 @@ async function renderDetail(id) {
       return;
     }
     const content = el("article", { class: "content-col" });
-    main.append(el("div", { class: "layout" }, buildRail(d.task, d.allTasks, d.estimate, d.calendar, d.nowISO, wrapStateOf(d), d.requirement), content));
+    const flow = flowStateOf(d);
+    main.append(el("div", { class: "layout" }, buildRail(d.task, d.allTasks, d.estimate, d.calendar, d.nowISO, flow), content));
     content.append(
       buildTitleRow(d.task),
       el("div", { class: "card-meta" }, statusPill(d.task), textEl("span", tr("detail.createdAt", { time: fmtTime(d.task.createdAt) }))),
-      ...(await buildDetailSections(d))
+      ...(await buildDetailSections(d, flow.phase))
     );
   });
 }

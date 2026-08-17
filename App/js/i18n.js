@@ -305,14 +305,16 @@ const zhHant = {
   "hint.note3": "單位是投入工時，只算上班時窗內，不是日曆時間。",
 
   // ---- Implementation steps ----
-  "steps.copyGen": "複製產生步驟卡的 Prompt",
-  "steps.copyImpl": "複製給實作 agent",
+  "steps.copyGen": "產生步驟卡",
+  "steps.copyGenAgain": "產生步驟卡（重跑）",
+  "steps.copyImpl": "給實作 agent",
+  "steps.noSteps": "尚未產出步驟卡",
   "steps.hintPicked": "尚未產出。用下面的 prompt 請 agent 依你選定的解法產生實作步驟卡：",
   "steps.hintNoPick": "尚未產出。請先到「時程評估・選解法」勾選要採用的解法，才能請 agent 產生步驟卡。",
 
   // ---- Wrap up ----
-  "wrap.copy": "複製收尾 Prompt",
-  "wrap.copyAgain": "複製收尾 Prompt（重跑）",
+  "wrap.copy": "複製 Prompt",
+  "wrap.copyAgain": "複製 Prompt（重跑）",
   "wrap.doneAny": "已完成。要重跑收尾請先按左側「重新開工」——收尾也是工時，計時中做才會算進 velocity。",
   "wrap.doneNone": "已完成但沒有收尾文件。要補請先按左側「重新開工」——收尾也是工時，計時中做才會算進 velocity。",
   "wrap.hintAny": "程式碼又改過的話可以重跑，agent 會依最新的程式碼覆寫這三份文件。",
@@ -607,15 +609,17 @@ const en = {
   "hint.note3": "The unit is effort hours inside the working window, not calendar time.",
 
   // ---- Implementation steps ----
-  "steps.copyGen": "Copy step-card prompt",
-  "steps.copyImpl": "Copy for implementing agent",
+  "steps.copyGen": "Generate step cards",
+  "steps.copyGenAgain": "Generate step cards (re-run)",
+  "steps.copyImpl": "To implementing agent",
+  "steps.noSteps": "No step cards yet",
   "steps.hintPicked": "Not produced yet. Use the prompt below to have the agent turn your chosen approach into step cards:",
   "steps.hintNoPick":
     "Not produced yet. Pick an approach under “Estimate · pick an approach” first, then the agent can generate step cards.",
 
   // ---- Wrap up ----
-  "wrap.copy": "Copy wrap-up prompt",
-  "wrap.copyAgain": "Copy wrap-up prompt (re-run)",
+  "wrap.copy": "Copy Prompt",
+  "wrap.copyAgain": "Copy Prompt (re-run)",
   "wrap.doneAny":
     "Already done. To re-run the wrap-up, press “Restart” on the left first — wrapping up is work too, and only counts toward velocity while the clock runs.",
   "wrap.doneNone":

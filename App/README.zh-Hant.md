@@ -35,7 +35,7 @@ python -m http.server 8765
 2. 按「複製 Prompt」，貼給在開發專案目錄下執行的 agent。prompt 會自動帶入設定頁填寫的任務資料夾相對路徑，agent 依該路徑讀寫任務資料。
 3. agent 先產出 `understanding.md`，列出採用的假設與待釐清的問題後停下等待確認。需求對齊之後才續產 `approaches.md` 與 `estimate.json`。回到網頁重新整理即可看到解法分析與校正後的分佈。
 4. 與 agent 討論並選定要採用的解法；不滿意可請它繼續修改。
-5. 勾選解法之後，「複製產生步驟卡的 Prompt」才會解除停用。貼給 agent 產出 `steps.md`，再按「複製給實作 agent」，把執行規則與步驟卡一併交給負責實作的 agent 逐張領取。建議這裡換一個乾淨的 agent，理由見下一節。
+5. 勾選解法之後，「產生步驟卡」才會解除停用。貼給 agent 產出 `steps.md`，再按「給實作 agent」，把執行規則與步驟卡一併交給負責實作的 agent 逐張領取。建議這裡換一個乾淨的 agent，理由見下一節。
 6. 實作定案、不再調整之後，複製「統整與收尾」的 prompt。agent 會依最終的程式碼產出 `final-spec.md`、`spec-diff.md`、`logic.md`。趁卡片仍在計時中進行——收尾同樣是工時。
 7. 交付後按「完工」。
 

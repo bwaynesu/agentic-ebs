@@ -93,10 +93,22 @@ A brand-new folder opens on the settings page rather than an empty task list, be
 Neither can be validated. The browser never learns a folder's absolute path, so the app cannot tell where the project is; any non-empty string passes. A gate would therefore give false assurance while trapping the user, so instead:
 
 - The path is seeded as `./<folder name>`, which at least reads as a path rather than a name, and it is badged "check this" — not "required", since it is never empty.
-- The git author is badged "worth filling in", first visit only. Left up whenever the field was empty, it would nag forever at anyone not using git.
-- The path is printed where it is used, on the button that copies the analysis prompt. Until then it existed only inside the copied text, so a wrong value surfaced as the agent reporting a missing file, minutes later, with nothing pointing back at the setting.
+- The git user name is badged "worth filling in", first visit only. Left up whenever the field was empty, it would nag forever at anyone not using git.
+- The path is printed where it is used, in the section that copies the analysis prompt. Until then it existed only inside the copied text, so a wrong value surfaced as the agent reporting a missing file, minutes later, with nothing pointing back at the setting.
 
 Save and Cancel both lead to the task list. Nothing here blocks navigation; the only thing in the app that may is unsaved edited content, which is about losing work rather than being incomplete.
+
+### 4.11 The task page shows the whole flow, always
+
+Every stage of a card gets a section, built whether or not it holds anything yet. The wrap-up section used to be skipped until `steps.md` existed, the argument being that listing it in the flow navigation would offer a button with nowhere to jump. That argument is circular — keep the section and the button lands somewhere — and the cost was real: a card created a minute ago displayed four stages of a five-stage process, which reads as a tool that has four stages.
+
+Each section's action sits at the right end of its heading instead of inside the body. Two of them, **Generate step cards** and **To implementing agent**, used to take turns in one spot: the moment `steps.md` appeared, the first was replaced by the second. Nobody noticed, because the swap happens when the user presses refresh, and they press refresh to look at something else. Fixed positions have a second benefit — a collapsed section can still be acted on, and copying a prompt never required reading the section anyway.
+
+An action that cannot run yet is disabled, not removed, and its reason rides on the `title` of a wrapping span. A disabled button fires no hover of its own, and the explanation otherwise sits inside the section the user would have to expand to read.
+
+The action belonging to the current stage is filled rather than outlined. Which stage that is comes from a single computation shared with the flow navigation, so the coloured button and the ● can never point at different places. A fill still reads under red-green colour blindness, where a change of hue alone collapses. One exception is deliberate: at the wrap-up stage the implementing-agent button is lit as well. Implementation produces no file the app can see, so the phase advances the instant `steps.md` lands, while the work itself has not started. Lighting only the wrap-up button there reads as "you are finished" and walks the user straight past the implementation.
+
+Finished cards carry no actions. They are velocity evidence, and re-running the analysis of finished work would overwrite what the estimate was judged against.
 
 ## 5. Cold start
 
