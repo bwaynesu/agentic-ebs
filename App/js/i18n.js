@@ -319,6 +319,7 @@ const zhHant = {
   "wrap.doneNone": "已完成但沒有收尾文件。要補請先按左側「重新開工」——收尾也是工時，計時中做才會算進 velocity。",
   "wrap.hintAny": "程式碼又改過的話可以重跑，agent 會依最新的程式碼覆寫這三份文件。",
   "wrap.hintNone": "實作定案、不再調整後，用下面的 prompt 請 agent 依最終程式碼補齊定案文件。",
+  "wrap.hintNoSteps": "尚未輪到。請先到「實作步驟卡」請 agent 產生步驟卡並完成實作，才能請 agent 收尾。",
 
   // ---- Time log ----
   "time.addInterval": "手動新增區間",
@@ -628,6 +629,8 @@ const en = {
   "wrap.hintAny": "If the code changed again you can re-run; the agent overwrites all three docs from the latest code.",
   "wrap.hintNone":
     "Once the implementation is settled, use the prompt below to have the agent write the final docs from the final code.",
+  "wrap.hintNoSteps":
+    "Not your turn yet. Have the agent generate step cards under “Implementation steps” and finish the work first, then it can wrap up.",
 
   // ---- Time log ----
   "time.addInterval": "Add interval manually",

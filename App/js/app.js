@@ -1533,17 +1533,19 @@ function buildRail(task, allTasks, estimate, calendar, nowISO, wrap, requirement
     hasReq: hasRequirement(requirement), // same condition as the "hand to agent for analysis" button
     hasEstimate: !!estimate,
     selectedApproach: task.selectedApproach,
-    hasSteps: wrap.show, // whether the wrap section appears is exactly "does steps.md exist"
+    hasSteps: wrap.hasSteps,
     wrapNeeded: wrap.needs,
   });
+  // Every section of the detail page is listed, always, in page order. Sections that cannot be
+  // acted on yet stay in place with their button disabled rather than disappearing, so the flow
+  // is visible from the first day of a card — the nav is a map of the process, not a list of what
+  // happens to be ready.
   const navItems = [
     ["sec-req", tr("sec.req")],
     ["sec-analyze", tr("sec.analyze")],
     ["sec-estimate", tr("sec.estimate")],
     ["sec-steps", tr("sec.steps")],
-    // No step card means no wrap-up section, so the nav must not list it either — listing it gives
-    // a button with nowhere to jump.
-    ...(wrap.show ? [["sec-wrap", tr("sec.wrap")]] : []),
+    ["sec-wrap", tr("sec.wrap")],
     ["sec-time", tr("sec.time")],
   ];
   const nav = el("nav", { class: "rail-nav" });
@@ -1835,10 +1837,13 @@ function buildStepsSection(task, steps, stepsTemplate) {
 // means hitting restart first to get the clock running again. Otherwise that discussion falls
 // into no interval at all and velocity comes out overstated, making the work look faster than
 // it was.
-function buildWrapSection(task, docs, wrapTemplate) {
+function buildWrapSection(task, steps, docs, wrapTemplate) {
   const dataDir = dataDirPath();
   const node = el("div");
   const any = docs.finalSpec !== null || docs.specDiff !== null || docs.logic !== null;
+  // There is nothing to wrap up before the step card exists, but the section stays and says so,
+  // the same way the step card section stands there greyed out until an approach is picked.
+  const ready = steps !== null;
   const prompt = (wrapTemplate ?? "")
     .replaceAll("<taskId>", task.id)
     .replaceAll("<dataDir>", dataDir) + langLine();
@@ -1855,17 +1860,17 @@ function buildWrapSection(task, docs, wrapTemplate) {
       onclick: () => copyToClipboard(prompt, tr("toast.copiedForAgent")),
     });
     // Use the .disabled property: el() goes through setAttribute, where even false disables it.
-    btn.disabled = !wrapTemplate;
+    btn.disabled = !wrapTemplate || !ready;
     node.append(
       textEl(
         "div",
-        any ? tr("wrap.hintAny") : tr("wrap.hintNone"),
-        { class: "muted small" }
+        !ready ? tr("wrap.hintNoSteps") : any ? tr("wrap.hintAny") : tr("wrap.hintNone"),
+        { class: ready ? "muted small" : "warn small" }
       ),
       el("div", { class: "toolbar" }, btn)
     );
     if (!wrapTemplate) node.append(textEl("div", tr("err.fileMissing", { path: "prompts/wrap-up-template.md" }), { class: "warn small" }));
-    else if (!any) node.append(textEl("div", prompt, { class: "pre-wrap small muted" }));
+    else if (!any && ready) node.append(textEl("div", prompt, { class: "pre-wrap small muted" }));
   }
   node.append(
     section(tr("sec.finalSpec"), mdBlock(docs.finalSpec)),
@@ -1981,27 +1986,23 @@ async function loadDetail(id) {
   return { task, allTasks, requirement, understanding, approaches, estimate, steps, stepsTemplate, finalSpec, specDiff, logic, wrapTemplate, calendar, nowISO: new Date().toISOString() };
 }
 
-// The rail needs two things about the wrap-up section: whether it exists (decides if the nav
-// lists the item) and whether to nag about it (decides the warning). Both call sites share one
-// computation so they cannot drift apart later.
+// The rail needs two things about the wrap-up stage: whether the step card exists (decides the
+// phase the flow nav points at) and whether to nag about it (decides the warning). Both call
+// sites share one computation so they cannot drift apart later.
 const wrapStateOf = (d) => ({
-  show: d.steps !== null,
+  hasSteps: d.steps !== null,
   needs: d.steps !== null && d.finalSpec === null && d.specDiff === null && d.logic === null,
 });
 
 async function buildDetailSections(d) {
-  const secs = [
+  return [
     buildRequirementSection(d.task, d.requirement),
     buildAnalyzeSection(d.task, d.understanding, d.approaches, d.requirement, d.estimate),
     await buildEstimateSection(d.task, d.estimate, d.allTasks, d.calendar),
     buildStepsSection(d.task, d.steps, d.stepsTemplate),
+    buildWrapSection(d.task, d.steps, { finalSpec: d.finalSpec, specDiff: d.specDiff, logic: d.logic }, d.wrapTemplate),
+    buildTimeSection(d.task, d.estimate, d.calendar, d.nowISO),
   ];
-  // With no step card there is no implementation to wrap up, so it should not take up space.
-  if (d.steps !== null) {
-    secs.push(buildWrapSection(d.task, { finalSpec: d.finalSpec, specDiff: d.specDiff, logic: d.logic }, d.wrapTemplate));
-  }
-  secs.push(buildTimeSection(d.task, d.estimate, d.calendar, d.nowISO));
-  return secs;
 }
 
 // In-place update: main is never cleared; the rail and each section are individually replaceWith'd.
