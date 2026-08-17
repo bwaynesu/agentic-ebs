@@ -933,6 +933,7 @@ async function renderSettings() {
           "details",
           { class: "field" },
           textEl("summary", tr("field.calendar")),
+          textEl("div", tr("cal.note"), { class: "muted small" }),
           calBox
         )
       ),
@@ -952,8 +953,13 @@ async function renderSettings() {
           langList,
           textEl("span", tr("outputLang.note"), { class: "muted small" })
         ),
-        textEl("p", tr("prompts.note"), { class: "muted small" }),
-        promptBox
+        // The note belongs to the editor list, so it shares one .field with it (gap --sp-1). As a
+        // bare <p> it was a direct child of .settings-group, which meant --sp-3 above and below
+        // plus the paragraph's own margin: a line of text floating between two things, attached
+        // to neither.
+        // A div, not a span: `.field > span:first-child` is the field-label rule (bold, full
+        // contrast) and it outranks .muted, so a span here would read as a heading.
+        el("div", { class: "field" }, textEl("div", tr("prompts.note", { name: folderName }), { class: "muted small" }), promptBox)
       ),
       el(
         "div",
@@ -1609,9 +1615,12 @@ function buildRequirementSection(task, requirement, editing = false) {
 }
 
 // Copy text to the clipboard and confirm; shared by the three "copy prompt" buttons.
-async function copyToClipboard(text, message) {
+// One message for every copy button. Naming the recipient ("paste this to the implementing
+// agent") only repeats the button that was just pressed, and a toast is gone in seconds — the
+// wrong place for anything the user would need to act on.
+async function copyToClipboard(text) {
   await navigator.clipboard.writeText(text);
-  toast(message);
+  toast(tr("toast.copied"));
 }
 
 function buildAnalyzeSection(task, understanding, approaches, requirement, estimate) {
@@ -1626,7 +1635,7 @@ function buildAnalyzeSection(task, understanding, approaches, requirement, estim
         const tpl = await store.readText("prompts/template.md");
         if (!tpl) { toast(tr("err.fileMissing", { path: "prompts/template.md" }), "err"); return; }
         const filled = tpl.replaceAll("<taskId>", task.id).replaceAll("<dataDir>", dataDirPath()) + langLine();
-        await copyToClipboard(filled, tr("toast.copiedForAgent"));
+        await copyToClipboard(filled);
       },
     });
     // Use the .disabled property: el() goes through setAttribute, where even false disables it.
@@ -1798,7 +1807,7 @@ function buildStepsSection(task, steps, stepsTemplate) {
       .replaceAll("<dataDir>", dataDir)
       .replaceAll("<approachId>", picked ?? "") + langLine();
     const btn = textEl("button", tr("steps.copyGen"), {
-      onclick: () => copyToClipboard(genPrompt, tr("toast.copiedToAnalyzer")),
+      onclick: () => copyToClipboard(genPrompt),
     });
     // Use the .disabled property: el() goes through setAttribute, where even false disables it.
     btn.disabled = !picked || !stepsTemplate;
@@ -1823,7 +1832,7 @@ function buildStepsSection(task, steps, stepsTemplate) {
         "div",
         { class: "toolbar" },
         textEl("button", tr("steps.copyImpl"), {
-          onclick: () => copyToClipboard(implPrompt, tr("toast.copiedToImpl")),
+          onclick: () => copyToClipboard(implPrompt),
         })
       ),
       mdBlock(steps)
@@ -1857,7 +1866,7 @@ function buildWrapSection(task, steps, docs, wrapTemplate) {
     );
   } else {
     const btn = textEl("button", any ? tr("wrap.copyAgain") : tr("wrap.copy"), {
-      onclick: () => copyToClipboard(prompt, tr("toast.copiedForAgent")),
+      onclick: () => copyToClipboard(prompt),
     });
     // Use the .disabled property: el() goes through setAttribute, where even false disables it.
     btn.disabled = !wrapTemplate || !ready;
@@ -2200,8 +2209,11 @@ async function tryConnect(handle) {
     connected = false;
     main.textContent = "";
     if (FOLDER_GONE.has(e.name)) {
+      // handle.name still answers on a dead handle: it is a plain string set when the handle was
+      // created, not a filesystem read. Every caller checks the handle before passing it in.
+      const name = handle.name;
       await store.forgetDataDir();
-      statusEl.textContent = tr("err.folderGone");
+      statusEl.textContent = tr("err.folderGone", { name });
       pickBtn.textContent = tr("app.pickDirRelink");
     } else {
       statusEl.textContent = tr("err.connectFailed", { message: e.message });
@@ -2345,7 +2357,7 @@ pickBtn.addEventListener("click", async () => {
   } else {
     // No "relink" wording here: nothing is remembered, so this really is a first pick. Relink
     // belongs to tryConnect's failure path, where a folder did exist and no longer answers.
-    statusEl.textContent = tr("app.dirNoneHint");
+    statusEl.textContent = tr("app.dirNone");
     main.append(buildWelcome(true));
   }
 })();

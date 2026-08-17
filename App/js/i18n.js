@@ -40,7 +40,6 @@ const zhHant = {
   // ---- Header & global ----
   "app.title": "Agentic EBS",
   "app.dirNone": "未連結任務資料夾",
-  "app.dirNoneHint": "未連結任務資料夾（點右方按鈕選擇）",
   "app.dirConnected": "任務資料夾：{name}",
   "app.themeToggle": "切換主題（淺色 / 灰階 / 深色）",
   "app.langLabel": "介面語言",
@@ -82,7 +81,7 @@ const zhHant = {
   "err.needTitle": "請填寫標題",
   "err.pickDateFirst": "請先選日期",
   "err.connectFailed": "連結失敗：{message}",
-  "err.folderGone": "找不到上次的任務資料夾（可能被刪除、改名或搬走了）。請點右方按鈕重新選擇。",
+  "err.folderGone": "遺失「{name}」資料夾路徑",
   "err.unsupported":
     "此瀏覽器不支援 File System Access API，請改用桌面版 Chrome / Edge 開啟（VS Code 內建瀏覽器、Firefox、Safari 皆不支援）。",
   "toast.saved": "已儲存",
@@ -90,9 +89,7 @@ const zhHant = {
   "toast.resetDone": "已還原為內建預設",
   "toast.settingsSaved": "設定已儲存",
   "toast.deleted": "已刪除「{title}」",
-  "toast.copiedForAgent": "已複製，可直接貼給在開發專案下執行的 agent。",
-  "toast.copiedToAnalyzer": "已複製，貼給正在分析這張任務的 agent。",
-  "toast.copiedToImpl": "已複製，貼給實作 agent（它會自行去讀 implement.md 與 steps.md）。",
+  "toast.copied": "已複製",
 
   // ---- Task status ----
   "status.draft": "草稿",
@@ -159,15 +156,16 @@ const zhHant = {
   "badge.confirm": "請確認",
   "badge.suggested": "建議填寫",
   "field.dataDir": "任務資料夾",
-  "field.dataDirPath": "任務資料夾相對路徑（從開發專案根目錄看）",
+  "field.dataDirPath": "任務資料夾相對路徑",
   "field.timezone": "時區（IANA 名稱）",
   "field.workStart": "上班時間",
   "field.workEnd": "下班時間",
   "field.workdays": "工作日",
-  "field.breaks": "休息時段（不計入工時，可多段）",
-  "field.calendar": "工作日曆：單日上下班時段覆寫（即改即存；改動會回溯影響當天的計入工時與 velocity）",
-  "field.gitAuthor": "Git 作者（姓名或 email，用於過濾你的 commit）",
-  "ph.gitAuthor": "git 作者姓名或 email",
+  "field.breaks": "休息時段（不計入工時）",
+  "field.calendar": "工作日曆",
+  "cal.note": "單日上下班時段覆寫。影響當日計入工時與 velocity。",
+  "field.gitAuthor": "Git 使用者名稱（篩選 commit）",
+  "ph.gitAuthor": "git 使用者名稱或 email",
   "ph.dataDirPath": "例如 ./ebs-data 或 docs/ebs-data",
   "ph.taskTitle": "任務標題",
   "break.label": "休息",
@@ -181,7 +179,7 @@ const zhHant = {
   "field.outputLang": "產出語言",
   "ph.outputLang": "例：繁體中文、日本語、Traditional Chinese（留空＝英文）",
   "outputLang.note": "agent 寫任務文件與對談時用的語言。檔名與代碼（status / tags）不受影響。",
-  "prompts.note": "編輯本資料夾內給 agent 的 prompt，各檔可獨立儲存或還原預設，只影響這個資料夾。",
+  "prompts.note": "編輯僅影響「{name}」資料夾任務",
   "prompts.reset": "還原預設",
   "prompts.confirmReset": "還原「{label}」為內建預設？會覆蓋目前內容。",
   "prompt.template.label": "① 分析 Prompt（template.md）",
@@ -193,8 +191,8 @@ const zhHant = {
   "prompt.wrapGuide.label": "⑦ 收尾規則（wrap-up-guide.md）",
 
   // ---- List ----
-  "list.empty": "尚無任務。點「新增任務」開始。",
-  "list.emptyOpen": "沒有進行中的任務。",
+  "list.empty": "尚無任務",
+  "list.emptyOpen": "尚無進行中任務",
   "list.newTask": "新增任務",
   "card.created": "建立 {time}",
   "card.totalSpent": "　總花費 {hours} h",
@@ -278,7 +276,7 @@ const zhHant = {
   "req.editAria": "編輯需求描述",
   "title.editAria": "編輯標題",
   "analyze.copyPrompt": "複製 Prompt",
-  "analyze.hint": "貼給在開發專案目錄下執行的 agent，讀寫位置 {path}。",
+  "analyze.hint": "讀寫位置 {path}",
   "analyze.needReq": "請先填寫需求描述。",
   "approach.pickedTag": "✔ 採用",
   "approach.pickedPrefix": "✔ 採用　",
@@ -331,7 +329,7 @@ const zhHant = {
   "time.legacyTitle": "分析/討論（舊制紀錄）",
   "off.checkbox": "有 {hours} h 落在上班時窗外，也算進工時",
   "off.explain":
-    "這 {hours} h 在上班時窗外（午休、下班後或假日），但緊貼你按下開工／完工的時刻，通常是真的在工作。勾選就計入工時與 velocity，不勾則排除。",
+    "這 {hours} h 在上班時窗外（午休、下班後或假日），但緊貼你按下開工／完工的時刻，通常是真的在工作。勾選則計入工時。",
   "off.unconfirmed":
     "這幾天的上班時窗還沒確認，窗外工時只是用預設時窗算的暫定值；先到首頁確認時窗再裁決。本卡暫不進入 velocity 歷史。",
   "off.undecided": "尚未決定，本卡暫不進入 velocity 歷史。",
@@ -341,7 +339,6 @@ const en = {
   // ---- Header & global ----
   "app.title": "Agentic EBS",
   "app.dirNone": "No task data folder linked",
-  "app.dirNoneHint": "No task data folder linked (pick one with the button on the right)",
   "app.dirConnected": "Task data folder: {name}",
   "app.themeToggle": "Switch theme (light / gray / dark)",
   "app.langLabel": "Interface language",
@@ -379,7 +376,7 @@ const en = {
   "err.needTitle": "Please enter a title",
   "err.pickDateFirst": "Pick a date first",
   "err.connectFailed": "Link failed: {message}",
-  "err.folderGone": "The task data folder you used last time is gone (deleted, renamed or moved). Use the button on the right to pick another one.",
+  "err.folderGone": "Lost the path to “{name}”",
   "err.unsupported":
     "This browser does not support the File System Access API. Open it in desktop Chrome / Edge (VS Code's built-in browser, Firefox and Safari are not supported).",
   "toast.saved": "Saved",
@@ -387,9 +384,7 @@ const en = {
   "toast.resetDone": "Restored to the built-in default",
   "toast.settingsSaved": "Settings saved",
   "toast.deleted": "Deleted “{title}”",
-  "toast.copiedForAgent": "Copied — paste it to an agent running in your dev project.",
-  "toast.copiedToAnalyzer": "Copied — paste it to the agent that analysed this task.",
-  "toast.copiedToImpl": "Copied — paste it to the implementing agent (it reads implement.md and steps.md itself).",
+  "toast.copied": "Copied",
 
   // ---- Task status ----
   "status.draft": "Draft",
@@ -463,11 +458,11 @@ const en = {
   "field.workStart": "Work starts",
   "field.workEnd": "Work ends",
   "field.workdays": "Workdays",
-  "field.breaks": "Breaks (excluded from working hours, multiple allowed)",
-  "field.calendar":
-    "Work calendar: per-day working window overrides (saved as you edit; changes retroactively affect that day's counted hours and velocity)",
-  "field.gitAuthor": "Git author (name or email, used to filter your commits)",
-  "ph.gitAuthor": "git author name or email",
+  "field.breaks": "Breaks (excluded from working hours)",
+  "field.calendar": "Work calendar",
+  "cal.note": "Per-day working window overrides. Affects that day's counted hours and velocity.",
+  "field.gitAuthor": "Git user name (filters commits)",
+  "ph.gitAuthor": "git user name or email",
   "ph.dataDirPath": "e.g. ./ebs-data or docs/ebs-data",
   "ph.taskTitle": "Task title",
   "break.label": "Break",
@@ -481,8 +476,7 @@ const en = {
   "field.outputLang": "Output language",
   "ph.outputLang": "e.g. Traditional Chinese, 日本語, Deutsch (empty = English)",
   "outputLang.note": "Language the agent writes task documents and replies in. File names and code values (status / tags) are unaffected.",
-  "prompts.note":
-    "Edit the agent prompts stored in this folder. Each file saves or resets independently and only affects this folder.",
+  "prompts.note": "Edits affect tasks in “{name}” only",
   "prompts.reset": "Restore default",
   "prompts.confirmReset": "Restore “{label}” to the built-in default? This overwrites the current content.",
   "prompt.template.label": "① Analysis prompt (template.md)",
@@ -494,8 +488,8 @@ const en = {
   "prompt.wrapGuide.label": "⑦ Wrap-up rules (wrap-up-guide.md)",
 
   // ---- List ----
-  "list.empty": "No tasks yet. Click “New task” to start.",
-  "list.emptyOpen": "No tasks in progress.",
+  "list.empty": "No tasks yet",
+  "list.emptyOpen": "No tasks in progress",
   "list.newTask": "New task",
   "card.created": "Created {time}",
   "card.totalSpent": " · spent {hours} h",
@@ -581,7 +575,7 @@ const en = {
   "req.editAria": "Edit requirement",
   "title.editAria": "Edit title",
   "analyze.copyPrompt": "Copy Prompt",
-  "analyze.hint": "Paste to an agent running in your project directory. Reads and writes under {path}.",
+  "analyze.hint": "Reads and writes under {path}",
   "analyze.needReq": "Write the requirement first.",
   "approach.pickedTag": "✔ chosen",
   "approach.pickedPrefix": "✔ chosen  ",
@@ -642,7 +636,7 @@ const en = {
   "time.legacyTitle": "Analysis/discussion (legacy record)",
   "off.checkbox": "{hours} h fell outside the working window — count them anyway",
   "off.explain":
-    "These {hours} h are outside the working window (lunch, after hours or a day off) but sit right against when you pressed Start / Complete, so they are usually real work. Tick to count them toward hours and velocity; leave it off to exclude them.",
+    "These {hours} h are outside the working window (lunch, after hours or a day off) but sit right against when you pressed Start / Complete, so they are usually real work. Tick to count them as working hours.",
   "off.unconfirmed":
     "The working windows for those days are not confirmed, so out-of-window hours are only provisional. Confirm the windows on the home page first. This task stays out of the velocity history for now.",
   "off.undecided": "Not decided yet; this task stays out of the velocity history for now.",

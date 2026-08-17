@@ -21,7 +21,7 @@ Then open <http://localhost:8765>. Any static server does the job when Python is
 ## First-time setup
 
 1. Click **Pick task data folder** at the top right and point it at a new, empty folder inside your project. The tool creates `settings.json`, `calendar.json`, `prompts/` and `tasks/` inside it.
-2. The tool opens the settings page by itself on a first link. Two fields there carry a badge — **Relative path from your project root** and **Git author** — because both shape the quality of the agent's analysis and neither raises an error when left wrong; how to fill them is described under [Settings page](#settings-page).
+2. The tool opens the settings page by itself on a first link. Two fields there carry a badge — **Relative path from your project root** and **Git user name** — because both shape the quality of the agent's analysis and neither raises an error when left wrong; how to fill them is described under [Settings page](#settings-page).
 3. Later reloads remember the folder on their own. When the browser asks for permission again, one click on **Relink task data folder** restores it — authorisation needs a user gesture and cannot happen automatically.
 
 The folder can live inside or outside the development project, since the path used in prompts is relative to the project. Inside is the easier choice: most CLI agents refuse by default to touch anything outside their working directory. The price is remembering to add the folder to that project's `.gitignore`.
@@ -108,7 +108,7 @@ When the tool asks, and in which order the confirmations happen, is covered in [
 
 | Field | Meaning |
 |---|---|
-| Git author | A name or an email. The agent filters with `git log --author=<this value>` to find one person's commits, which show the habits and the usual size of a change. **An empty value raises no error, but the filter stops working** and the agent reads the whole team's history |
+| Git user name | A name or an email. The agent filters with `git log --author=<this value>` to find one person's commits, which show the habits and the usual size of a change. **An empty value raises no error, but the filter stops working** and the agent reads the whole team's history |
 
 ### Prompt customisation
 
