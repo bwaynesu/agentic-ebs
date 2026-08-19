@@ -256,12 +256,15 @@ export function sameView(a, b) {
 // is not finished. Each stage's condition matches the disabled condition of the section it points
 // at: the button that copies the steps prompt is disabled until an approach is picked, no matter
 // how many approaches there are.
+// Picking an approach and asking for the step cards are one stop, not two: both buttons live in
+// the estimate section, and a stage whose work happens somewhere else is a nav mark that lies.
+// selectedApproach is still taken, since a picked-but-not-generated card sits in the same stage
+// with the button merely enabled.
 export function currentPhase({ status, hasReq, hasEstimate, selectedApproach, hasSteps, wrapNeeded }) {
   if (status === "done") return "sec-time";
   if (!hasReq) return "sec-req";
   if (!hasEstimate) return "sec-analyze";
-  if (!selectedApproach) return "sec-estimate";
-  if (!hasSteps) return "sec-steps";
+  if (!selectedApproach || !hasSteps) return "sec-estimate";
   if (wrapNeeded) return "sec-wrap";
   return "sec-time";
 }

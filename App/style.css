@@ -39,10 +39,9 @@
   --accent-fg: #ffffff;
   --accent-soft: #e8f0fc;
   --ok: #1f9254;
-  --ok-strong: #167544;
-  --ok-strong-hover: #0f5c35;
   --ok-soft: #e7f6ee;
   --warn: #a4650a;
+  --warn-hover: #8a5408;
   --warn-soft: #fdf4e3;
   --warn-border: #e8cd93;
   --danger: #c0392f;
@@ -69,10 +68,9 @@
   --accent-fg: #1b1e22;
   --accent-soft: #3d4753;
   --ok: #5cc48a;
-  --ok-strong: #5cc48a;
-  --ok-strong-hover: #74d29d;
   --ok-soft: #33453c;
   --warn: #e0b464;
+  --warn-hover: #ecc47c;
   --warn-soft: #443b2b;
   --warn-border: #6b5934;
   --danger: #e58079;
@@ -99,10 +97,9 @@
   --accent-fg: #0f1115;
   --accent-soft: #1e2c42;
   --ok: #48c98a;
-  --ok-strong: #48c98a;
-  --ok-strong-hover: #63d59d;
   --ok-soft: #14301f;
   --warn: #e8b45a;
+  --warn-hover: #f0c470;
   --warn-soft: #362c18;
   --warn-border: #5c4a22;
   --danger: #f0776d;
@@ -192,13 +189,17 @@ button.primary {
 button.primary:hover { background: var(--accent-hover); }
 
 /* "Complete" and "Start / Restart" occupy the same spot in the side rail at the same size, with
-   only the label differing — pressing the wrong one stops a clock that is still running. Green is
-   the site-wide color for "this now holds" (the selected approach uses it too), and stopping the
-   clock belongs to that family.
-   It uses --ok-strong rather than --ok: against white text in the light theme, --ok only reaches
-   4.1:1 and fails AA. */
-button.primary.complete { background: var(--ok-strong); }
-button.primary.complete:hover { background: var(--ok-strong-hover); }
+   only the label differing — pressing the wrong one stops a clock that is still running, so the
+   two must not look alike.
+   Complete wears --warn, the amber this app already uses for "in progress". It used to be green:
+   green is the site-wide "this now holds" colour, and directly under the status pill a green
+   "Complete" was read as "this card is already complete". Amber says the clock is running, which
+   is the only state in which this button exists. Leaving it unfilled was worse still — an
+   outlined button in the rail's one action slot does not read as the thing to press.
+   --warn against --accent-fg reaches 4.72:1 in the light theme (AA for normal text); the two dark
+   themes put dark text on a light amber and clear it comfortably. */
+button.primary.complete { background: var(--warn); }
+button.primary.complete:hover { background: var(--warn-hover); }
 
 /* The three-way choice for unsaved content. A native <dialog> hands focus trapping, Esc and
    ::backdrop to the browser, so there is no need to build a modal. Its default styling (black

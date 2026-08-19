@@ -357,7 +357,9 @@ assert.equal(phase({}), "sec-analyze", "case 19: once the requirement is written
 assert.equal(phase({ hasEstimate: true }), "sec-estimate", "case 19: an estimate moves it to choosing an approach");
 // A card with only one approach still has to have it selected: the copy-step-card button is
 // conditioned on selectedApproach regardless of how many approaches there are
-assert.equal(phase({ hasEstimate: true, selectedApproach: "a1" }), "sec-steps");
+// Picking and asking for the step cards are the same stop — both buttons are in the estimate
+// section, so the card stays there until steps.md lands
+assert.equal(phase({ hasEstimate: true, selectedApproach: "a1" }), "sec-estimate", "case 19: a picked approach with no step cards is still the estimate section, where the button lives");
 assert.equal(phase({ hasEstimate: true, selectedApproach: "a1", hasSteps: true, wrapNeeded: true }), "sec-wrap");
 assert.equal(phase({ hasEstimate: true, selectedApproach: "a1", hasSteps: true }), "sec-time", "case 19: with the wrap-up written, only timing is left");
 // A done card always stops at timing: even missing a step card, it should not nag about earlier stages

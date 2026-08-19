@@ -38,7 +38,7 @@ The folder can live inside or outside the development project, since the path us
 
 4. Discussion settles which approach to take. Nothing stops the agent from revising until one of them is right.
 
-5. Ticking an approach releases **Generate step cards**. Pasting that to the agent produces `steps.md`, and **To implementing agent** then hands the execution rules together with the step cards to whichever agent does the work, one card at a time. A clean agent is the better choice here, for the reason in the next section.
+5. Ticking an approach releases **Copy step-card prompt**, at the head of the same section as the approaches. Pasting that to the agent produces `steps.md`, and **Copy implementation prompt**, on the step-card section, then hands the execution rules together with the step cards to whichever agent does the work, one card at a time. A clean agent is the better choice here, for the reason in the next section.
 
 6. When the implementation has stopped changing, the prompt under **Wrap up** goes to the agent, which writes `final-spec.md`, `spec-diff.md` and `logic.md` from the final code. Doing this while the card is still counting matters — wrapping up is work too.
 

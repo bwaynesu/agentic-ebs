@@ -1721,12 +1721,18 @@ function approachBlocks(md, selectedId, allIds) {
 // Schedule estimate: one row per approach. The ideal hours (analysis estimate + approach
 // estimate) are converted into a distribution through the velocity pool, and on an unfinished
 // card the approach can be selected right here.
-async function buildEstimateSection(task, estimate, allTasks, calendar) {
+async function buildEstimateSection(task, estimate, allTasks, calendar, steps, stepsTemplate, phase) {
   const node = el("div");
+  // Asking for the step cards belongs here, next to the radio buttons: picking an approach and
+  // handing it to the agent are one move. It used to sit in the step-card section, where a button
+  // labelled "generate step cards" in a section that shows step cards reads as "press this and
+  // they appear" — it only copies a prompt.
+  const stepsAction = () => stepsPromptBtn(task, steps, stepsTemplate, phase);
   if (!estimate) {
     node.textContent = tr("detail.waitingAgent");
     node.className = "muted";
-    return section(tr("sec.estimate"), node, true, "sec-estimate");
+    const bare = section(tr("sec.estimate"), node, true, "sec-estimate");
+    return task.status === "done" ? bare : sectionActions(bare, stepsAction());
   }
   const pool = await velocityPool(allTasks, calendar);
   const eff = ebs.effectivePool(pool, settings);
@@ -1782,9 +1788,42 @@ async function buildEstimateSection(task, estimate, allTasks, calendar) {
     node.append(box);
   }
   if (maxH > 0) node.append(distAxis(maxH), distLegend());
+  // What the button above copies, shown once an approach is picked and before the step cards
+  // exist. Re-runs get no preview: the step cards are on screen by then and the prompt is only
+  // noise under them.
+  if (task.status !== "done" && steps === null) {
+    const picked = task.selectedApproach;
+    node.append(textEl("div", picked ? tr("steps.hintPicked") : tr("steps.hintNoPick"), { class: picked ? "muted small" : "warn small" }));
+    // A missing prompt file is said out loud, not only in the disabled button's tooltip: it is a
+    // folder problem the user has to go and fix, and a tooltip is easy never to see.
+    if (!stepsTemplate) node.append(textEl("div", tr("err.fileMissing", { path: "prompts/steps-template.md" }), { class: "warn small" }));
+    else if (picked) node.append(textEl("div", stepsPrompt(task, stepsTemplate), { class: "pre-wrap small muted" }));
+  }
   const sec = section(tr("sec.estimate"), node, true, "sec-estimate");
   sec.querySelector("summary").append(readingHint());
-  return sec;
+  return task.status === "done" ? sec : sectionActions(sec, stepsAction());
+}
+
+// The prompt that asks the agent to turn the chosen approach into step cards, and the button that
+// copies it. Both live next to the approach radios (buildEstimateSection); the step-card section
+// only displays the result.
+function stepsPrompt(task, stepsTemplate) {
+  return (stepsTemplate ?? "")
+    .replaceAll("<taskId>", task.id)
+    .replaceAll("<dataDir>", dataDirPath())
+    .replaceAll("<approachId>", task.selectedApproach ?? "") + langLine();
+}
+
+function stepsPromptBtn(task, steps, stepsTemplate, phase) {
+  const picked = task.selectedApproach;
+  // Once steps.md exists this becomes a re-run, and it says so: it overwrites the card the user
+  // may already be working from.
+  return actionBtn(steps === null ? tr("steps.copyGen") : tr("steps.copyGenAgain"), {
+    disabled: !picked || !stepsTemplate,
+    primary: phase === "sec-estimate",
+    reason: picked ? tr("err.fileMissing", { path: "prompts/steps-template.md" }) : tr("steps.hintNoPick"),
+    onclick: () => copyToClipboard(stepsPrompt(task, stepsTemplate)),
+  });
 }
 
 // The on-demand "how to read this" note next to the heading. The chart still has to explain
@@ -1823,50 +1862,22 @@ function readingHint() {
   return el("span", { class: "hint" }, icon, bubble);
 }
 
-// Implementation step card: the agent produces steps.md once the user confirms an approach.
-// Until then, this offers the prompt that asks the agent to generate it.
-function buildStepsSection(task, steps, stepsTemplate, phase) {
+// Implementation step card: shows steps.md once the agent has written it. Asking for it happens
+// one section up, next to the approach that is being handed over (stepsPromptBtn).
+function buildStepsSection(task, steps, phase) {
   const dataDir = dataDirPath();
   const node = el("div");
-  // No copying until an approach is chosen: the agent could only come back and ask which one,
-  // wasting the round trip.
-  const picked = task.selectedApproach;
-  const genPrompt = (stepsTemplate ?? "")
-    .replaceAll("<taskId>", task.id)
-    .replaceAll("<dataDir>", dataDir)
-    .replaceAll("<approachId>", picked ?? "") + langLine();
   // This sentence is a prompt to paste to an agent, not UI text: the instruction language
   // follows `prompts/` (English, the language of the source of truth) and does not change with
   // the UI language. The output language is specified separately by langLine() (outputLang on
   // the settings page).
   const implPrompt = `Read the execution rules in ${dataDir}/prompts/implement.md and implement the step cards in ${dataDir}/tasks/${task.id}/steps.md one at a time.` + langLine();
 
-  if (steps === null) {
-    node.append(
-      textEl(
-        "div",
-        picked ? tr("steps.hintPicked") : tr("steps.hintNoPick"),
-        { class: picked ? "muted small" : "warn small" }
-      )
-    );
-    if (!stepsTemplate) node.append(textEl("div", tr("err.fileMissing", { path: "prompts/steps-template.md" }), { class: "warn small" }));
-    else if (picked) node.append(textEl("div", genPrompt, { class: "pre-wrap small muted" }));
-  } else {
-    node.append(mdBlock(steps));
-  }
+  node.append(steps === null ? textEl("div", tr("steps.noSteps"), { class: "muted small" }) : mdBlock(steps));
   const sec = section(tr("sec.steps"), node, true, "sec-steps");
   if (task.status === "done") return sec;
   return sectionActions(
     sec,
-    // Once steps.md exists this becomes a re-run, and it says so: it overwrites the card the user
-    // may already be working from. Before the actions moved up here the button simply vanished at
-    // that point, and re-running meant deleting the file by hand.
-    actionBtn(steps === null ? tr("steps.copyGen") : tr("steps.copyGenAgain"), {
-      disabled: !picked || !stepsTemplate,
-      primary: phase === "sec-steps",
-      reason: picked ? tr("err.fileMissing", { path: "prompts/steps-template.md" }) : tr("steps.hintNoPick"),
-      onclick: () => copyToClipboard(genPrompt),
-    }),
     // Lit during sec-wrap, alongside the wrap-up button. Implementing produces no file the app can
     // see, so the phase jumps to sec-wrap the moment steps.md lands — while what actually comes
     // next is the implementation. Lighting only the wrap-up button there reads as "you are done,
@@ -2067,8 +2078,8 @@ async function buildDetailSections(d, phase) {
   return [
     buildRequirementSection(d.task, d.requirement),
     buildAnalyzeSection(d.task, d.understanding, d.approaches, d.requirement, d.estimate, phase),
-    await buildEstimateSection(d.task, d.estimate, d.allTasks, d.calendar),
-    buildStepsSection(d.task, d.steps, d.stepsTemplate, phase),
+    await buildEstimateSection(d.task, d.estimate, d.allTasks, d.calendar, d.steps, d.stepsTemplate, phase),
+    buildStepsSection(d.task, d.steps, phase),
     buildWrapSection(d.task, d.steps, { finalSpec: d.finalSpec, specDiff: d.specDiff, logic: d.logic }, d.wrapTemplate, phase),
     buildTimeSection(d.task, d.estimate, d.calendar, d.nowISO),
   ];
