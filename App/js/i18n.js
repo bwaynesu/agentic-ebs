@@ -78,6 +78,7 @@ const zhHant = {
   // ---- Errors & toasts ----
   "err.endAfterStart": "結束時間需晚於開始時間",
   "err.fileMissing": "找不到 {path}",
+  "err.createTask": "無法建立任務：{reason}",
   "err.needTitle": "請填寫標題",
   "err.pickDateFirst": "請先選日期",
   "err.connectFailed": "連結失敗：{message}",
@@ -375,6 +376,7 @@ const en = {
   // ---- Errors & toasts ----
   "err.endAfterStart": "End time must be later than start time",
   "err.fileMissing": "{path} not found",
+  "err.createTask": "Could not create the task: {reason}",
   "err.needTitle": "Please enter a title",
   "err.pickDateFirst": "Pick a date first",
   "err.connectFailed": "Link failed: {message}",

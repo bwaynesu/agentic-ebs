@@ -1289,7 +1289,17 @@ function buildNewTaskBar() {
   const submit = textEl("button", tr("list.newTask"), {
     class: "primary",
     onclick: async () => {
-      const id = await createTask(titleInput.value.trim());
+      let id;
+      try {
+        id = await createTask(titleInput.value.trim());
+      } catch (e) {
+        // Creating a card is the one place a title becomes a folder name, so it is where a title
+        // the file system will not take surfaces. Without this the async handler's promise simply
+        // rejects: no message, no redraw, the bar just sits there. From the user's side a
+        // rejected title and a dead button look exactly the same.
+        toast(tr("err.createTask", { reason: e.message }), "err");
+        return;
+      }
       await renderDetail(id);
       await offerStart(id);
     },

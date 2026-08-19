@@ -82,9 +82,19 @@ export function sortTasks(tasks) {
 }
 
 // Turns a title into something usable as a folder name: drop the characters file names cannot
-// hold, collapse whitespace into hyphens
+// hold, collapse whitespace into hyphens, and refuse to end on a dot.
+// The trailing dot is not cosmetic. Windows strips it from every path it resolves, so a folder
+// named "2026-08-19-0." exists on disk yet neither cmd nor PowerShell can cd into it: they look
+// for a name without the dot and find nothing. The agent works in that folder from a shell, so
+// such a card would be unreachable to the one tool it exists to brief. Chrome refuses to create
+// it at all, which is how this surfaced — typing "0." as a title did nothing whatsoever.
+// Trailing hyphens go with it, or "fix ." would collapse to "fix-." and be left as "fix-".
 export function sanitizeTitle(title) {
-  const s = title.replace(/[\\/:*?"<>|]/g, "").trim().replace(/\s+/g, "-");
+  const s = title
+    .replace(/[\\/:*?"<>|]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[.\-]+$/, "");
   return s || "task";
 }
 

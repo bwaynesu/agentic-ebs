@@ -31,7 +31,7 @@ data/
 
 ## taskId
 
-Format: `YYYY-MM-DD-<title>`, the date being the creation date in the configured time zone. The title has the characters a Windows folder name cannot hold removed (`\ / : * ? " < > |`), is trimmed, and has runs of whitespace collapsed into `-`. A title that survives this as an empty string becomes `task`. If a folder of that name already exists, a counter is appended: `-2`, `-3`, and so on.
+Format: `YYYY-MM-DD-<title>`, the date being the creation date in the configured time zone. The title has the characters a Windows folder name cannot hold removed (`\ / : * ? " < > |`), is trimmed, and has runs of whitespace collapsed into `-`. Trailing dots and hyphens are then removed: Windows drops a trailing dot from every path it resolves, so a folder named `2026-08-19-0.` sits on disk unreachable to the shell the agent runs in, and Chrome declines to create it at all. A title that survives this as an empty string becomes `task`. If a folder of that name already exists, a counter is appended: `-2`, `-3`, and so on.
 
 ## settings.json
 

@@ -75,6 +75,14 @@ assert.deepEqual(order, ["new-active", "old-active", "interrupted", "estimated",
 assert.equal(sanitizeTitle("修 A/B 測試"), "修-AB-測試");
 assert.equal(sanitizeTitle('  a:b*c?d"e<f>g|h  '), "abcdefgh");
 assert.equal(sanitizeTitle("///"), "task", "there has to be a fallback, an empty folder name is not acceptable");
+// A trailing dot makes the folder unreachable: Windows strips it from every path it resolves, so
+// cmd and PowerShell look for a name that is not there, and Chrome refuses to create it at all.
+assert.equal(sanitizeTitle("0."), "0", "case 3: a trailing dot has to go, the folder would be unreachable from a shell");
+assert.equal(sanitizeTitle("fix ."), "fix", "case 3: the hyphen left by the collapsed space goes with it");
+assert.equal(sanitizeTitle("..."), "task", "case 3: a title of nothing but dots still needs a folder name");
+// Dots elsewhere are untouched: version numbers and file names in a title are ordinary and work
+assert.equal(sanitizeTitle("v1.2 fix"), "v1.2-fix");
+assert.equal(sanitizeTitle("update README.md"), "update-README.md");
 
 // 4. Id generation: date-title, walking forward past collisions (including runs of them).
 //    Chinese title again on purpose — task ids become real folder names, so a CJK title has to
