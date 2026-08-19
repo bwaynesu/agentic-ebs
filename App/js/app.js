@@ -26,6 +26,7 @@ import {
   sameView,
   promptLangLine,
   currentPhase,
+  filesChanged,
   repairStatus,
 } from "./tasks.js";
 
@@ -864,6 +865,7 @@ let firstRun = false;
 async function renderSettings() {
   if (!(await confirmDiscard())) return;
   rerender = renderSettings; // without this line, ⟳ on the settings page redraws the home list
+  watchDetail(null, null);
   syncHistory({ view: "settings" });
   const cur = await store.readJSON("settings.json");
   const tzInput = el("input", { type: "text", value: cur.timezone });
@@ -1054,6 +1056,7 @@ async function renderList() {
   if (!(await confirmDiscard())) return;
   firstRun = false; // reaching the list at all means the first-run setup is behind us
   rerender = renderList;
+  watchDetail(null, null);
   syncHistory({ view: "list" });
   const back = cameFrom;
   cameFrom = null;
@@ -2026,11 +2029,78 @@ function buildTimeSection(task, estimate, calendar, nowISO) {
 
 // Read every file the detail page needs in one go. Shared by renderDetail (view swap) and
 // refreshDetail (in-place update).
+// ---------- Auto refresh when the window comes back ----------
+
+// The agent writes into the task folder while the user is away in a terminal, so coming back to
+// a page still showing the files from ten minutes ago means reaching for ⟳ every single time.
+// Only the card on screen is watched, and only its own files: the prompt templates change from
+// the settings page (which redraws itself) and calendar.json is written by the app.
+const WATCH_FILES = [
+  "task.json",
+  "requirement.md",
+  "understanding.md",
+  "approaches.md",
+  "estimate.json",
+  "steps.md",
+  "final-spec.md",
+  "spec-diff.md",
+  "logic.md",
+];
+// Coming back to the window fires focus (another window) or visibilitychange (another tab); both
+// are listened for and share one timer, so an alt-tab flurry redraws once. The delay is also
+// what makes a half-written file unlikely: the agent usually writes several files in a burst,
+// and waiting out the quiet costs nothing when the user has just walked back to the desk.
+const WATCH_DELAY = 1500;
+
+let watchTaskId = null;
+let watchSnapshot = null;
+let watchTimer = null;
+
+function watchPaths(id) {
+  return WATCH_FILES.map((name) => `tasks/${id}/${name}`);
+}
+
+// Called by every view: the detail page arms the watch, the others disarm it. Without the
+// disarm, a focus landing on the list would call refreshDetail, whose fallback navigates to the
+// detail page — the window would change view on its own just because it regained focus.
+function watchDetail(id, snapshot) {
+  watchTaskId = id;
+  watchSnapshot = snapshot;
+}
+
+async function checkWatch() {
+  // Unsaved text anywhere means the whole round is skipped, snapshot included. refreshDetail
+  // would keep the edit box (it skips unsavedIn), but it would also stamp a fresh snapshot over
+  // files it did not render, and that change would then never surface. Saving goes through
+  // refreshDetail anyway, so nothing is lost by waiting — and it keeps us away from
+  // refreshDetail's renderDetail fallback, the one path that would pop the unsaved-changes
+  // dialog at someone who did nothing but come back to the window.
+  if (!connected || unsavedIn || !watchTaskId) return;
+  try {
+    const now = await store.mtimes(watchPaths(watchTaskId));
+    if (filesChanged(watchSnapshot, now)) await refreshDetail(watchTaskId);
+  } catch {
+    // A failure here says nothing about the folder being gone — it is just as likely to be a
+    // file the agent happens to be holding open. Never forgetDataDir() from this path (see the
+    // FOLDER_GONE handling in tryConnect): that would throw away a folder the user still has,
+    // on a code path that runs every time they look at the window.
+  }
+}
+
+function scheduleWatch() {
+  if (document.visibilityState !== "visible") return;
+  clearTimeout(watchTimer);
+  watchTimer = setTimeout(checkWatch, WATCH_DELAY);
+}
+
+window.addEventListener("focus", scheduleWatch);
+document.addEventListener("visibilitychange", scheduleWatch);
+
 async function loadDetail(id) {
   const allTasks = await loadAllTasks();
   const task = allTasks.find((t) => t.id === id);
   if (!task) return null;
-  const [requirement, understanding, approaches, estimate, steps, stepsTemplate, finalSpec, specDiff, logic, wrapTemplate, calendar] = await Promise.all([
+  const [requirement, understanding, approaches, estimate, steps, stepsTemplate, finalSpec, specDiff, logic, wrapTemplate, calendar, watch] = await Promise.all([
     store.readText(`tasks/${id}/requirement.md`),
     store.readText(`tasks/${id}/understanding.md`),
     store.readText(`tasks/${id}/approaches.md`),
@@ -2042,13 +2112,21 @@ async function loadDetail(id) {
     store.readText(`tasks/${id}/logic.md`),
     store.readText("prompts/wrap-up-template.md"),
     store.readJSON("calendar.json").then((c) => c ?? {}),
+    // The baseline for the focus refresh, taken in the same round as the reads. A write landing
+    // inside that window is recorded as already-seen and waits for the next focus.
+    // The draft -> estimated promotion below writes task.json after this stat, so the first focus
+    // after an estimate lands redraws once more with identical content. Harmless, and cheaper
+    // than the bookkeeping to avoid it.
+    // ponytail: statting first would close both gaps at the cost of a second round trip; do it if
+    // a change is ever observed to go missing.
+    store.mtimes(watchPaths(id)),
   ]);
   // Once the agent has written an estimate, promote the card out of draft automatically.
   if (estimate && task.status === "draft") {
     task.status = "estimated";
     await store.writeJSON(`tasks/${id}/task.json`, task);
   }
-  return { task, allTasks, requirement, understanding, approaches, estimate, steps, stepsTemplate, finalSpec, specDiff, logic, wrapTemplate, calendar, nowISO: new Date().toISOString() };
+  return { task, allTasks, requirement, understanding, approaches, estimate, steps, stepsTemplate, finalSpec, specDiff, logic, wrapTemplate, calendar, watch, nowISO: new Date().toISOString() };
 }
 
 // Where the card stands in the flow, computed once and handed to both the rail and the sections.
@@ -2096,6 +2174,7 @@ async function refreshDetail(id) {
   const flow = flowStateOf(d);
   const sections = await buildDetailSections(d, flow.phase);
   if (!sections.every((s) => document.getElementById(s.id))) return renderDetail(id);
+  watchDetail(id, d.watch);
   document.getElementById("side-rail")?.replaceWith(buildRail(d.task, d.allTasks, d.estimate, d.calendar, d.nowISO, flow));
   // Do not swap a section that is being edited and not yet saved. Start/complete and interval
   // editing both land here, and neither should swallow half-typed text.
@@ -2146,6 +2225,8 @@ async function renderDetail(id) {
   syncHistory({ view: "detail", id });
   cameFrom = id; // on return to the list, scroll back to this card and highlight it (browser back too)
   const d = await loadDetail(id);
+  // Arm the focus refresh on this card, or disarm it if the card turned out not to exist.
+  watchDetail(d ? id : null, d?.watch ?? null);
   await swapView(async () => {
     if (!d) {
       main.append(textEl("p", tr("detail.notFound"), { class: "empty" }), textEl("button", tr("act.backToList"), { onclick: renderList }));

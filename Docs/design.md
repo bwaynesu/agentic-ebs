@@ -102,13 +102,29 @@ Save and Cancel both lead to the task list. Nothing here blocks navigation; the 
 
 Every stage of a card gets a section, built whether or not it holds anything yet. The wrap-up section used to be skipped until `steps.md` existed, the argument being that listing it in the flow navigation would offer a button with nowhere to jump. That argument is circular — keep the section and the button lands somewhere — and the cost was real: a card created a minute ago displayed four stages of a five-stage process, which reads as a tool that has four stages.
 
-Each section's action sits at the right end of its heading instead of inside the body. Two of them, **Generate step cards** and **To implementing agent**, used to take turns in one spot: the moment `steps.md` appeared, the first was replaced by the second. Nobody noticed, because the swap happens when the user presses refresh, and they press refresh to look at something else. Fixed positions have a second benefit — a collapsed section can still be acted on, and copying a prompt never required reading the section anyway.
+Each section's action sits at the right end of its heading instead of inside the body. The step-card prompt and the implementation prompt used to take turns in one spot: the moment `steps.md` appeared, the first was replaced by the second. Nobody noticed, because the swap happens when the user presses refresh, and they press refresh to look at something else. Fixed positions have a second benefit — a collapsed section can still be acted on, and copying a prompt never required reading the section anyway.
+
+Every one of those buttons is named for the text it copies, never for what the agent will then do. **Generate step cards** and **To implementing agent** both read as promises the app cannot keep: nothing here runs an agent, and people pressed them expecting step cards to appear. They are **Copy step-card prompt** and **Copy implementation prompt**.
+
+The step-card prompt sits with the approaches rather than with the step cards. Choosing an approach and handing it over is one move, and splitting it across two sections created a stage whose only content was "press the button the previous stage just unlocked". The flow navigation follows: choosing an approach and generating the step cards are one stop, and the step-card section is never the current stage — it displays `steps.md` and carries the implementation prompt. Every section is still listed; not every section has to be a stage.
 
 An action that cannot run yet is disabled, not removed, and its reason rides on the `title` of a wrapping span. A disabled button fires no hover of its own, and the explanation otherwise sits inside the section the user would have to expand to read.
 
 The action belonging to the current stage is filled rather than outlined. Which stage that is comes from a single computation shared with the flow navigation, so the coloured button and the ● can never point at different places. A fill still reads under red-green colour blindness, where a change of hue alone collapses. One exception is deliberate: at the wrap-up stage the implementing-agent button is lit as well. Implementation produces no file the app can see, so the phase advances the instant `steps.md` lands, while the work itself has not started. Lighting only the wrap-up button there reads as "you are finished" and walks the user straight past the implementation.
 
 Finished cards carry no actions. They are velocity evidence, and re-running the analysis of finished work would overwrite what the estimate was judged against.
+
+### 4.12 The task page refreshes itself when the window comes back
+
+The agent writes into the task folder while the user is somewhere else — a terminal, an editor, another window. Returning to a page that still shows the files from ten minutes ago made the refresh button part of the routine, pressed on arrival every single time.
+
+So the page re-reads itself when the window regains focus. Both `focus` and `visibilitychange` are listened for, since one covers another window and the other another tab, and they share one timer, so a flurry of alt-tabbing redraws once. The timer runs for about a second and a half after the last of them. That delay is not politeness: agents tend to write several files in a burst, and waiting out the quiet makes it unlikely that a file is read mid-write.
+
+Before anything is redrawn, the modification times of the card's own files are compared against a snapshot taken when the page was last drawn. Nothing changed means nothing is rebuilt. This is not about saving reads — `getFile()` costs almost nothing next to reading the contents — it is that a page which rearranges itself for no reason is worse than a stale one, and the window regains focus dozens of times a day.
+
+The redraw is the same in-place update the refresh button performs, so a section being edited is left alone. But when anything is unsaved, the whole round is skipped, snapshot included. Refreshing around the edit box would work; stamping a new snapshot over files that were deliberately not redrawn would not, because that change would then never surface. Saving already triggers the same in-place update, so waiting costs nothing. It also keeps this path away from the full re-render fallback, which asks about unsaved changes — a dialog nobody should meet for the crime of coming back to the window.
+
+Only the card on screen is watched, and only its own files. Failures are swallowed here without touching the stored folder handle: a read failing while the agent holds a file open says nothing about the folder still existing, and this code runs every time the user looks at the window.
 
 ## 5. Cold start
 

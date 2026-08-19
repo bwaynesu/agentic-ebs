@@ -34,7 +34,7 @@ The folder can live inside or outside the development project, since the path us
 
 2. **Copy Prompt** produces text to paste to an agent running in the development project directory. The prompt carries the relative path from the settings page, and the agent reads and writes the task data through it.
 
-3. The agent writes `understanding.md` first — the assumptions it adopted and the questions still open — then stops and waits for confirmation. Only once the requirement lines up does it go on to `approaches.md` and `estimate.json`. Refreshing the page brings up the approaches and the corrected distribution.
+3. The agent writes `understanding.md` first — the assumptions it adopted and the questions still open — then stops and waits for confirmation. Only once the requirement lines up does it go on to `approaches.md` and `estimate.json`. Switch back to the browser and the card re-reads itself about a second later, bringing up the approaches and the corrected distribution — ⟳ is still there for the times you never left the window.
 
 4. Discussion settles which approach to take. Nothing stops the agent from revising until one of them is right.
 

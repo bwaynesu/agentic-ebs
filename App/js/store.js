@@ -130,6 +130,27 @@ export async function readText(path) {
   }
 }
 
+// Modification times for a set of paths. The focus refresh only needs to know WHETHER anything
+// changed, and getFile() answers that without reading a single byte of content — which matters
+// because steps.md and the wrap-up documents are the files the agent rewrites most often.
+// A missing file is null rather than an omitted key: a file appearing is precisely the change
+// being watched for, so it has to be representable.
+export async function mtimes(paths) {
+  const out = {};
+  await Promise.all(paths.map(async (p) => { out[p] = await mtime(p); }));
+  return out;
+}
+
+async function mtime(path) {
+  try {
+    const fh = await getFile(path, false);
+    return (await fh.getFile()).lastModified;
+  } catch (e) {
+    if (e.name === "NotFoundError" || e.name === "TypeMismatchError") return null;
+    throw e;
+  }
+}
+
 export async function writeText(path, text) {
   const fh = await getFile(path, true);
   const w = await fh.createWritable();

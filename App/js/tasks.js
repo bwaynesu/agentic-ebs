@@ -283,6 +283,19 @@ export function repairStatus(task, hasEstimate) {
   return hasEstimate ? "estimated" : "draft";
 }
 
+// Has any watched file changed since the snapshot? Both sides map path -> lastModified, with
+// null for a file that does not exist, so a file appearing or disappearing counts like any other
+// change — the first landing of estimate.json is the single most important one to catch.
+// With nothing to compare against, nothing has changed: the alternative is redrawing the page
+// the first time the window is focused after opening a card, every single time.
+export function filesChanged(prev, next) {
+  if (!prev || !next) return false;
+  for (const p of new Set([...Object.keys(prev), ...Object.keys(next)])) {
+    if ((prev[p] ?? null) !== (next[p] ?? null)) return true;
+  }
+  return false;
+}
+
 export function newTask(id, title, nowISO) {
   return {
     id,

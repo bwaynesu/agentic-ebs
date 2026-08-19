@@ -20,6 +20,7 @@ import {
   hasRequirement,
   promptLangLine,
   currentPhase,
+  filesChanged,
   repairStatus,
   splitSections,
   matchApproach,
@@ -394,5 +395,23 @@ assert.deepEqual(
   "case 21: the task.json fields changed — decide whether the new field is app-only or agent-writable before updating this list"
 );
 assert.deepEqual(AGENT_FIELDS.filter((f) => !FIELDS.includes(f)), [], "case 21: AGENT_FIELDS lists a field task.json does not have");
+
+// 22. The focus refresh's change detection. It compares two path -> lastModified snapshots; the
+//     stakes are that a false negative means the page silently keeps showing stale files, and a
+//     false positive redraws the card under someone who only alt-tabbed back.
+const snap = { "tasks/t1/estimate.json": 100, "tasks/t1/steps.md": null };
+assert.equal(filesChanged(snap, { ...snap }), false, "case 22: identical snapshots are not a change");
+assert.equal(filesChanged(snap, { ...snap, "tasks/t1/estimate.json": 101 }), true);
+// A file appearing is the change that matters most — estimate.json landing is the whole point
+assert.equal(filesChanged(snap, { ...snap, "tasks/t1/steps.md": 500 }), true, "case 22: null -> a time is a file appearing");
+// And disappearing counts too: the user may have deleted steps.md by hand to re-run the agent
+assert.equal(filesChanged({ ...snap, "tasks/t1/steps.md": 500 }, snap), true);
+// No baseline is not a change. Reporting one would redraw the page the first time the window is
+// focused after opening any card, every time.
+assert.equal(filesChanged(null, snap), false, "case 22: with no snapshot to compare against, nothing has changed");
+assert.equal(filesChanged(snap, null), false, "case 22: a failed read must not be reported as a change");
+// undefined and null are the same "not there": the two sides are built by different code paths
+assert.equal(filesChanged({ a: null }, {}), false, "case 22: a missing key and a null must not differ");
+assert.equal(filesChanged({}, { a: 100 }), true);
 
 console.log("ALL PASS");
